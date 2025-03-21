@@ -1,0 +1,118 @@
+#:import utils kivy.utils
+#:import dp kivy.metrics.dp
+#:import sp kivy.metrics.sp
+
+# Enhanced Colors with Material Design palette
+#:set PRIMARY_COLOR '#1976D2'    # Material Blue 700
+#:set PRIMARY_LIGHT '#42A5F5'    # Material Blue 400
+#:set PRIMARY_DARK '#1565C0'     # Material Blue 800
+#:set ACCENT_COLOR '#FF4081'     # Pink A200
+#:set BACKGROUND_COLOR '#FFFFFF' 
+#:set ERROR_COLOR '#D32F2F'      # Material Red 700
+#:set SUCCESS_COLOR '#388E3C'    # Material Green 700
+#:set TEXT_COLOR '#212121'       # Almost Black
+#:set SECONDARY_TEXT '#757575'   # Grey 600
+#:set HINT_COLOR '#9E9E9E'       # Grey 500
+#:set CARD_COLOR '#F5F5F5'       # Grey 100
+#:set DIVIDER_COLOR '#EEEEEE'    # Grey 200
+
+# Common Styles
+<StyleLabel@Label>:
+    color: utils.get_color_from_hex(TEXT_COLOR)
+    size_hint_y: None
+    height: dp(40)
+    font_size: sp(16)
+    bold: True
+
+<HeaderLabel@StyleLabel>:
+    font_size: sp(28)
+    bold: True
+    color: utils.get_color_from_hex(PRIMARY_DARK)
+    height: dp(50)
+
+<SubtitleLabel@StyleLabel>:
+    font_size: sp(16)
+    color: utils.get_color_from_hex(PRIMARY_COLOR)
+    height: dp(30)
+    bold: False
+
+<CustomTextInput@TextInput>:
+    size_hint: (0.85, None)
+    height: dp(50)
+    multiline: False
+    background_color: 0, 0, 0, 0
+    cursor_color: utils.get_color_from_hex(PRIMARY_COLOR)
+    padding: [dp(20), dp(15)]
+    font_size: sp(16)
+    hint_text_color: utils.get_color_from_hex(HINT_COLOR)
+    foreground_color: utils.get_color_from_hex(TEXT_COLOR)
+    canvas.before:
+        Color:
+            rgba: utils.get_color_from_hex(BACKGROUND_COLOR)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [15]
+        Color:
+            rgba: utils.get_color_from_hex(PRIMARY_COLOR) if self.focus or self.text else utils.get_color_from_hex('#E0E0E0')
+        Line:
+            rounded_rectangle: [self.x, self.y, self.width, self.height, 15]
+            width: 2 if self.focus else 1
+
+<PrimaryButton@Button>:
+    size_hint: (0.85, None)
+    height: dp(50)  # Increased height
+    background_color: 0, 0, 0, 0
+    font_size: sp(16)
+    bold: True
+    canvas.before:
+        Color:
+            rgba: utils.get_color_from_hex(PRIMARY_COLOR) if self.state == 'normal' else utils.get_color_from_hex(PRIMARY_DARK)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [25]  # Pill-shaped button
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.1
+        RoundedRectangle:
+            pos: self.x, self.y - dp(2) if self.state == 'normal' else self.y
+            size: self.size
+            radius: [25]
+    on_press: Animation(height=dp(43), duration=0.1).start(self)
+    on_release: Animation(height=dp(45), duration=0.1).start(self)
+
+<TextButton@Button>:
+    background_color: 0, 0, 0, 0
+    color: utils.get_color_from_hex(PRIMARY_COLOR)
+    size_hint: 0.85, None
+    height: dp(40)
+    font_size: sp(14)
+    bold: True
+    on_press: self.color = utils.get_color_from_hex(PRIMARY_DARK)
+    on_release: self.color = utils.get_color_from_hex(PRIMARY_COLOR)
+
+<PasswordField@BoxLayout>:
+    orientation: 'horizontal'
+    size_hint: (0.85, None)
+    height: dp(50)
+    hint_text: ''
+    password_text: password_input.text
+    
+    CustomTextInput:
+        id: password_input
+        password: True
+        hint_text: root.hint_text
+        size_hint: (1, None)
+        height: dp(50)
+        foreground_color: utils.get_color_from_hex(TEXT_COLOR)
+        on_focus: root.parent.parent.on_password_focus(self) if hasattr(root.parent.parent, 'on_password_focus') else None
+    
+    MDIconButton:
+        icon: 'eye' if password_input.password else 'eye-off'
+        theme_text_color: "Custom"
+        text_color: utils.get_color_from_hex(PRIMARY_COLOR) if password_input.focus or password_input.text else utils.get_color_from_hex(HINT_COLOR)
+        size_hint: None, None
+        size: dp(40), dp(50)  # Match parent height
+        pos_hint: {'center_y': 0.5}
+        on_press: password_input.password = not password_input.password 

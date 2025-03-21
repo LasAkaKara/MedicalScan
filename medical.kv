@@ -1,0 +1,324 @@
+#:import utils kivy.utils
+#:import dp kivy.metrics.dp
+#:import Animation kivy.animation.Animation
+#:include styles.kv
+#:include views/components/navigation_bar.kv
+
+#:include views/screens/kv/login_screen.kv
+#:include views/screens/kv/signup_screen.kv
+#:include views/screens/kv/verification_screen.kv
+#:include views/screens/kv/home_screen.kv
+
+<CustomTextInput@TextInput>:
+    size_hint: (0.85, None)
+    height: dp(45)
+    multiline: False
+    background_color: 0, 0, 0, 0
+    cursor_color: utils.get_color_from_hex('#406D96')
+    padding: [dp(20), dp(10)]
+    font_size: '16sp'
+    hint_text_color: utils.get_color_from_hex('#999999')
+    foreground_color: utils.get_color_from_hex('#333333')
+    canvas.before:
+        Color:
+            rgba: utils.get_color_from_hex('#F2F2F2')
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10]
+        Color:
+            rgba: utils.get_color_from_hex('#406D96') if self.focus else utils.get_color_from_hex('#E0E0E0')
+        Line:
+            rounded_rectangle: [self.x, self.y, self.width, self.height, 10]
+            width: 1.5 if self.focus else 1
+    on_focus:
+        Animation(height=dp(50) if self.focus else dp(45), duration=0.2).start(self)
+        Animation(font_size=sp(17) if self.focus else sp(16), duration=0.2).start(self)
+
+<CustomButton@Button>:
+    size_hint: (0.85, None)
+    height: dp(45)
+    background_color: 0, 0, 0, 0
+    canvas.before:
+        Color:
+            rgba: utils.get_color_from_hex('#406D96') if self.state == 'normal' else utils.get_color_from_hex('#2F3A56')
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10]
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, 0.1
+        RoundedRectangle:
+            pos: self.x, self.y - dp(2) if self.state == 'normal' else self.y
+            size: self.size
+            radius: [10]
+    on_press:
+        Animation(height=dp(43), duration=0.1).start(self)
+    on_release:
+        Animation(height=dp(45), duration=0.1).start(self)
+
+<FadeLabel@Label>:
+    opacity: 0
+    size_hint_y: None
+    height: dp(30)
+    color: utils.get_color_from_hex('#FF4444')
+
+<LoginScreen>:
+    email: email
+    password: password
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(20)
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Widget:
+            size_hint_y: 0.15
+
+        HeaderLabel:
+            text: 'MediScan'
+            font_size: sp(32)
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+        SubtitleLabel:
+            text: 'Hiểu Rõ Mọi Thành Phần\nNhắc Nhở Theo Dõi Sức Khỏe'
+            halign: 'center'
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+        Widget:
+            size_hint_y: 0.1
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(15)
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+            CustomTextInput:
+                id: email
+                hint_text: 'Email'
+                pos_hint: {'center_x': 0.5}
+
+            PasswordField:
+                id: password
+                hint_text: 'Mật khẩu'
+                pos_hint: {'center_x': 0.5}
+
+            StyleLabel:
+                id: error_label
+                text: ''
+                color: utils.get_color_from_hex(ERROR_COLOR)
+                height: dp(30)
+
+            PrimaryButton:
+                text: 'ĐĂNG NHẬP'
+                pos_hint: {'center_x': 0.5}
+                on_press: root.validate_login()
+
+        Widget:
+            size_hint_y: 0.1
+
+        TextButton:
+            text: 'Chưa có tài khoản? Đăng ký tại đây'
+            pos_hint: {'center_x': 0.5}
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+            on_press: 
+                self.color = utils.get_color_from_hex(PRIMARY_DARK)
+            on_release: 
+                self.color = utils.get_color_from_hex(PRIMARY_COLOR)
+                root.manager.current = 'signup'
+
+<SignupScreen>:
+    email: email
+    password: password
+    confirm_password: confirm_password
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(20)
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Widget:
+            size_hint_y: 0.1
+
+        Label:
+            text: 'Đăng Ký Tài Khoản'
+            font_size: '28sp'
+            size_hint_y: None
+            height: dp(50)
+            color: utils.get_color_from_hex('#2F3A56')
+            bold: True
+
+        Widget:
+            size_hint_y: 0.1
+
+        CustomTextInput:
+            id: email
+            hint_text: 'Email'
+            pos_hint: {'center_x': 0.5}
+
+        PasswordField:
+            id: password
+            hint_text: 'Mật khẩu'
+            pos_hint: {'center_x': 0.5}
+
+        PasswordField:
+            id: confirm_password
+            hint_text: 'Xác nhận mật khẩu'
+            pos_hint: {'center_x': 0.5}
+
+        Label:
+            id: error_label
+            text: ''
+            color: utils.get_color_from_hex('#FF4444')
+            size_hint_y: None
+            height: dp(30)
+
+        CustomButton:
+            text: 'ĐĂNG KÝ'
+            pos_hint: {'center_x': 0.5}
+            on_press: root.register()
+
+        Widget:
+            size_hint_y: 0.1
+
+        Button:
+            text: 'Đã có tài khoản? Đăng nhập'
+            color: utils.get_color_from_hex('#406D96')
+            size_hint: 0.85, None
+            height: dp(40)
+            pos_hint: {'center_x': 0.5}
+            background_color: 0, 0, 0, 0
+            on_press: root.manager.current = 'login'
+
+<MedicalHome>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: utils.get_color_from_hex('#F5F5F5')
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            orientation: 'vertical'
+            padding: dp(20)
+            spacing: dp(20)
+
+            HeaderLabel:
+                text: 'Welcome to MediScan'
+                font_size: sp(28)
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+            SubtitleLabel:
+                text: 'Your health companion'
+                halign: 'center'
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+            Widget:
+                size_hint_y: 0.3
+
+            PrimaryButton:
+                text: 'Start Scanning'
+                pos_hint: {'center_x': 0.5}
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
+                on_press: root.show_hello()
+
+            Widget:
+                size_hint_y: 0.3
+
+            TextButton:
+                text: 'Đăng xuất'
+                pos_hint: {'center_x': 0.5}
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
+                on_press: root.logout()
+
+<VerificationScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(20)
+        canvas.before:
+            Color:
+                rgba: 1, 1, 1, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Widget:
+            size_hint_y: 0.1
+
+        HeaderLabel:
+            text: 'Xác Thực Email'
+            font_size: sp(28)
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+        SubtitleLabel:
+            text: 'Vui lòng nhập mã xác thực đã được gửi đến email của bạn'
+            halign: 'center'
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+        Widget:
+            size_hint_y: 0.1
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(15)
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+            CustomTextInput:
+                id: verification_code
+                hint_text: 'Nhập mã xác thực'
+                size_hint: (0.85, None)
+                height: dp(45)
+                pos_hint: {'center_x': 0.5}
+
+            Label:
+                id: error_label
+                text: ''
+                color: utils.get_color_from_hex(ERROR_COLOR)
+                size_hint_y: None
+                height: dp(30)
+
+            PrimaryButton:
+                text: 'XÁC THỰC'
+                pos_hint: {'center_x': 0.5}
+                on_press: root.verify_code()
+
+            TextButton:
+                text: 'Gửi lại mã xác thực'
+                pos_hint: {'center_x': 0.5}
+                on_press: root.resend_code()
+
+        Widget:
+            size_hint_y: 0.1
+
+        TextButton:
+            text: 'Quay lại đăng nhập'
+            pos_hint: {'center_x': 0.5}
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+            on_press: 
+                root.manager.current = 'login' 

@@ -1,0 +1,77 @@
+<VerificationScreen>:
+    canvas.before:
+        Color:
+            rgba: utils.get_color_from_hex(BACKGROUND_COLOR)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(20)
+
+        Widget:
+            size_hint_y: 0.1
+
+        HeaderLabel:
+            text: 'Xác Thực Email'
+            font_size: sp(28)
+            color: utils.get_color_from_hex(PRIMARY_COLOR)
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+        SubtitleLabel:
+            text: 'Vui lòng nhập mã xác thực đã được gửi đến email của bạn'
+            halign: 'center'
+            color: utils.get_color_from_hex(SECONDARY_TEXT)
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+        Widget:
+            size_hint_y: 0.1
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(15)
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+            CustomTextInput:
+                id: verification_code
+                hint_text: 'Nhập mã xác thực'
+                size_hint: (0.85, None)
+                height: dp(50)
+                pos_hint: {'center_x': 0.5}
+                font_size: sp(20)
+                halign: 'center'
+                input_filter: 'int'
+                max_length: 6
+                padding: [dp(20), dp(10)]
+
+            Label:
+                id: error_label
+                text: ''
+                color: utils.get_color_from_hex(ERROR_COLOR)
+                size_hint_y: None
+                height: dp(30)
+
+            PrimaryButton:
+                text: 'XÁC THỰC'
+                pos_hint: {'center_x': 0.5}
+                on_press: root.verify_code()
+
+            TextButton:
+                text: 'Gửi lại mã xác thực'
+                pos_hint: {'center_x': 0.5}
+                on_press: root.resend_code()
+
+        Widget:
+            size_hint_y: 0.1
+
+        TextButton:
+            text: 'Quay lại đăng nhập'
+            pos_hint: {'center_x': 0.5}
+            opacity: 0
+            on_parent: Animation(opacity=1, duration=0.5).start(self)
+            on_press: root.manager.current = 'login' 

@@ -1,0 +1,11 @@
+kivy_deps.angle
+kivy_deps.glew
+kivy_deps.sdl2
+kivy_deps.gstreamer
+kivy
+pillow==10.0.0
+python-dotenv==1.0.0
+mysql-connector-python==8.2.0
+kivymd==1.1.1 
+pytz
+opencv-python
