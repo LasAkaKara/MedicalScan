@@ -15,6 +15,7 @@ from views.screens.python.home_screen import HomeScreen
 from views.screens.python.history_screen import HistoryScreen
 from views.screens.python.prescription_detail_screen import PrescriptionDetailScreen
 from views.screens.python.scan_screen import ScanScreen, CornerMarker
+from views.screens.python.reset_password_screen import ResetPasswordScreen
 from kivymd.app import MDApp
 from services.database_service import DatabaseService
 from controllers.auth_controller import AuthController
@@ -24,6 +25,9 @@ from kivy.lang import Builder
 # Load all KV files
 Builder.load_file('styles.kv')
 Builder.load_file('views/screens/kv/login_screen.kv')
+Builder.load_file('views/screens/kv/signup_screen.kv')
+Builder.load_file('views/screens/kv/verification_screen.kv')
+Builder.load_file('views/screens/kv/reset_password_screen.kv')
 Builder.load_file('views/screens/kv/home_screen.kv')
 Builder.load_file('views/screens/kv/history_screen.kv')
 Builder.load_file('views/screens/kv/prescription_detail_screen.kv')
@@ -33,7 +37,6 @@ Builder.load_file('views/components/navigation_bar.kv')
 class TestApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # KivyMD will automatically handle common imports
         self.theme_cls.primary_palette = "Blue"
     
     def build(self):
@@ -44,7 +47,7 @@ class TestApp(MDApp):
         # Create screen manager
         sm = ScreenManager()
         
-        # Create all screens (we still need to create them all to avoid errors)
+        # Create all screens
         login_screen = LoginScreen(name='login')
         signup_screen = SignupScreen(name='signup')
         verify_screen = VerificationScreen(name='verify')
@@ -52,6 +55,7 @@ class TestApp(MDApp):
         history_screen = HistoryScreen(name='history')
         prescription_detail = PrescriptionDetailScreen(name='prescription_detail')
         scan_screen = ScanScreen(name='scan')
+        reset_password_screen = ResetPasswordScreen(name='reset_password')
         
         # Add all screens to manager
         sm.add_widget(login_screen)
@@ -61,15 +65,23 @@ class TestApp(MDApp):
         sm.add_widget(history_screen)
         sm.add_widget(prescription_detail)
         sm.add_widget(scan_screen)
+        sm.add_widget(reset_password_screen)
         
         # Simulate successful login by setting up home screen
         home_screen.user_email = 'example@mediscan.com'
-        sm.transition.direction = 'left'
         
-        # Start directly at scan screen for testing
-        sm.current = 'scan'
+        # Start at home screen first
+        sm.current = 'medical_home'
+        
+        # Schedule transition to scan screen after a short delay
+        from kivy.clock import Clock
+        Clock.schedule_once(lambda dt: self.transition_to_scan(sm), 0.5)
         
         return sm
+    
+    def transition_to_scan(self, sm):
+        sm.transition.direction = 'left'
+        sm.current = 'scan'
 
 if __name__ == '__main__':
     Config.set('graphics', 'width', '400')

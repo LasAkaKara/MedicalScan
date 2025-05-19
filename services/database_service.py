@@ -5,8 +5,11 @@ from dotenv import load_dotenv
 import os
 import json
 import pytz
+import logging
 
 load_dotenv()
+
+Logger = logging.getLogger(__name__)
 
 class DatabaseService:
     def __init__(self):
@@ -49,9 +52,25 @@ class DatabaseService:
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
                 last_login DATETIME DEFAULT NULL,
                 full_name VARCHAR(255) DEFAULT NULL,
-                phone VARCHAR(20) DEFAULT NULL
+                phone VARCHAR(20) DEFAULT NULL,
+                preferences TEXT DEFAULT NULL,
+                health_data TEXT DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ''')
+
+            # Check if the preferences and health_data columns exist, if not add them
+            try:
+                cursor.execute("SHOW COLUMNS FROM users LIKE 'preferences'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE users ADD COLUMN preferences TEXT DEFAULT NULL")
+                    print("Added preferences column to users table")
+                
+                cursor.execute("SHOW COLUMNS FROM users LIKE 'health_data'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE users ADD COLUMN health_data TEXT DEFAULT NULL")
+                    print("Added health_data column to users table")
+            except Exception as e:
+                print(f"Error checking/adding columns: {e}")
 
             # Create Medicine table
             cursor.execute('''
@@ -86,6 +105,22 @@ class DatabaseService:
                 FOREIGN KEY (category_id) REFERENCES categories(id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ''')
+
+            # Try to create scans table for tracking scan history
+            try:
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS scans (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+                    image_path VARCHAR(255),
+                    scan_result TEXT,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                ''')
+                print("Created scans table if it didn't exist")
+            except Exception as e:
+                print(f"Error creating scans table: {e}")
 
             # Check if data exists
             cursor.execute("SELECT COUNT(*) as count FROM medicines")
@@ -252,7 +287,10 @@ class DatabaseService:
             print(f"Error checking database: {e}")
 
     def hash_password(self, password):
-        return hashlib.sha256(password.encode()).hexdigest()
+        """Hash a password for storing"""
+        if not password:
+            return ""
+        return hashlib.md5(password.encode()).hexdigest()
 
     def register_user(self, email, password, verification_code):
         conn = self.connect()
@@ -328,6 +366,35 @@ class DatabaseService:
                 conn.close()
         return False
 
+    def check_verification_status(self, email):
+        """Check if a user exists but is not verified yet"""
+        conn = self.connect()
+        if not conn:
+            return "unknown"
+            
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute('''
+                SELECT is_verified 
+                FROM users 
+                WHERE email = %s
+            ''', (email,))
+            
+            result = cursor.fetchone()
+            if not result:
+                return "not_found"  # User doesn't exist
+                
+            if not result['is_verified']:
+                return "unverified"  # User exists but not verified
+                
+            return "verified"  # User exists and is verified
+        except Exception as e:
+            print(f"Error checking verification status: {e}")
+            return "unknown"
+        finally:
+            cursor.close()
+            conn.close()
+
     def update_verification_code(self, email, new_code):
         conn = self.connect()
         if conn:
@@ -384,13 +451,283 @@ class DatabaseService:
             prescription = cursor.fetchone()
             if prescription:
                 # Parse medicine_details from JSON
-                if 'medicine_details' in prescription:
-                    prescription['medicine_details'] = json.loads(prescription['medicine_details'])
+                if 'medicine_details' in prescription and isinstance(prescription['medicine_details'], str):
+                    try:
+                        details_str = prescription['medicine_details']
+                        Logger.info(f"Attempting to parse medicine_details JSON for ID {prescription_id}")
+                        prescription['medicine_details'] = json.loads(details_str)
+                        Logger.info(f"Successfully parsed medicine_details for ID {prescription_id}")
+                    except json.JSONDecodeError as json_err:
+                        Logger.error(f"JSONDecodeError parsing medicine_details for ID {prescription_id}: {json_err}")
+                        Logger.error(f"Problematic JSON string: {details_str}")
+                        # Decide how to handle - maybe return None or prescription with raw string?
+                        # For now, let's set it to an empty dict to avoid crashing later stages 
+                        # but log the error clearly.
+                        prescription['medicine_details'] = {'medicines': []} # Provide default structure
+                    except Exception as inner_e:
+                         Logger.error(f"Unexpected error during JSON parsing for ID {prescription_id}: {inner_e}")
+                         prescription['medicine_details'] = {'medicines': []} # Provide default structure
+                elif 'medicine_details' not in prescription:
+                     Logger.warning(f"medicine_details field missing for prescription ID {prescription_id}")
+                     prescription['medicine_details'] = {'medicines': []} # Provide default structure
+                # If it's already a dict (or other type), log a warning but proceed
+                elif not isinstance(prescription['medicine_details'], str):
+                    Logger.warning(f"medicine_details for ID {prescription_id} is not a string, type: {type(prescription['medicine_details'])}. Assuming already parsed.")
+                    # Ensure it has the expected structure if possible
+                    if not isinstance(prescription['medicine_details'], dict) or 'medicines' not in prescription['medicine_details']:
+                         prescription['medicine_details'] = {'medicines': []} 
+                         
                 return prescription
-            return None
+            else:
+                Logger.warning(f"Prescription with ID {prescription_id} not found in database.")
+                return None
         except Exception as e:
-            print(f"Error fetching prescription detail: {e}")
+            Logger.error(f"Error fetching prescription detail in DB service for ID {prescription_id}: {e}")
+            import traceback
+            traceback.print_exc() # Print full traceback for DB errors
             return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_current_user(self):
+        """Get the current user from the database (placeholder for session management)"""
+        conn = self.connect()
+        if not conn:
+            return None
+        
+        cursor = conn.cursor(dictionary=True)
+        
+        try:
+            # In a real application, this would use the logged-in user ID
+            # For this example, we'll just get the first verified user
+            cursor.execute("""
+                SELECT id, email, full_name, phone
+                FROM users
+                WHERE is_verified = TRUE
+                LIMIT 1
+            """)
+            
+            user = cursor.fetchone()
+            if user:
+                # Add username field (using email prefix)
+                if user['email'] and '@' in user['email']:
+                    user['username'] = user['email'].split('@')[0]
+                else:
+                    user['username'] = user['email'] or "user"
+                
+                # Convert None values to empty strings
+                for key in user:
+                    if user[key] is None:
+                        user[key] = ""
+            
+            return user
+        except Exception as e:
+            print(f"Error fetching current user: {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    def update_user_profile(self, username, email, full_name, phone, preferences=None, health_data=None):
+        """Update user profile information"""
+        conn = self.connect()
+        if not conn:
+            return False
+            
+        try:
+            cursor = conn.cursor()
+            
+            # For now we're using the username to identify the user
+            # In a real application, you'd use the user ID
+            
+            # Check if user exists
+            cursor.execute("SELECT id FROM users WHERE email = %s", (username,))
+            result = cursor.fetchone()
+            
+            if not result:
+                return False
+                
+            # Update user data
+            if preferences is None:
+                preferences = '{}'
+                
+            if health_data is None:
+                health_data = '{}'
+                
+            cursor.execute("""
+                UPDATE users 
+                SET email = %s, full_name = %s, phone = %s, preferences = %s, health_data = %s
+                WHERE email = %s
+            """, (email, full_name, phone, preferences, health_data, username))
+            
+            conn.commit()
+            return True
+        except Exception as e:
+            conn.rollback()
+            print(f"Error updating user profile: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+        finally:
+            if cursor:
+                cursor.close()
+            conn.close()
+
+    def verify_password(self, username, password):
+        """Verify a user's password"""
+        conn = self.connect()
+        if not conn:
+            return False
+        
+        cursor = conn.cursor(dictionary=True)
+        
+        try:
+            # Check if username is actually an email
+            if '@' in username:
+                email = username
+            else:
+                # Try to find the email associated with this username
+                cursor.execute("SELECT email FROM users WHERE email LIKE %s", (f"{username}@%",))
+                result = cursor.fetchone()
+                if not result:
+                    return False
+                email = result['email']
+            
+            # Hash the provided password
+            hashed_password = self.hash_password(password)
+            
+            # Check if the credentials match
+            cursor.execute("""
+                SELECT id FROM users
+                WHERE email = %s AND password = %s
+            """, (email, hashed_password))
+            
+            result = cursor.fetchone()
+            return result is not None
+        except Exception as e:
+            print(f"Error verifying password: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def update_password(self, username, new_password):
+        """Update a user's password"""
+        conn = self.connect()
+        if not conn:
+            return False
+        
+        cursor = conn.cursor()
+        
+        try:
+            # Check if username is actually an email
+            if '@' in username:
+                email = username
+            else:
+                # Try to find the email associated with this username
+                cursor.execute("SELECT email FROM users WHERE email LIKE %s", (f"{username}@%",))
+                result = cursor.fetchone()
+                if not result:
+                    return False
+                email = result[0]
+            
+            # Hash the new password
+            hashed_password = self.hash_password(new_password)
+            
+            # Update the password
+            cursor.execute("""
+                UPDATE users
+                SET password = %s
+                WHERE email = %s
+            """, (hashed_password, email))
+            
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error updating password: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def close(self):
+        """Close the database connection"""
+        # Since we're using a connection pool, this doesn't have to do anything
+        # The connections are automatically returned to the pool when closed
+        pass
+
+    def email_exists(self, email):
+        """Check if email already exists in the database"""
+        conn = self.connect()
+        if not conn:
+            return True  # Assume it exists if DB connection fails for safety
+            
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT COUNT(*) FROM users WHERE email = %s
+            ''', (email,))
+            
+            count = cursor.fetchone()[0]
+            return count > 0
+        except Exception as e:
+            print(f"Error checking if email exists: {e}")
+            return True  # Assume it exists on error for safety
+        finally:
+            cursor.close()
+            conn.close()
+
+    def save_reset_code(self, email, reset_code):
+        """Save a password reset code for a user"""
+        conn = self.connect()
+        if not conn:
+            return False
+            
+        cursor = conn.cursor()
+        try:
+            # Set the reset code and its expiry time (5 minutes)
+            expiry = datetime.now() + timedelta(minutes=5)
+            
+            # Store the reset code in the verification_code field
+            cursor.execute('''
+                UPDATE users 
+                SET verification_code = %s, code_expiry = %s
+                WHERE email = %s
+            ''', (reset_code, expiry, email))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error saving reset code: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+            
+    def verify_reset_code(self, email, code):
+        """Verify a password reset code"""
+        conn = self.connect()
+        if not conn:
+            return False
+            
+        cursor = conn.cursor()
+        try:
+            # Check if the code matches and hasn't expired
+            cursor.execute('''
+                SELECT COUNT(*) 
+                FROM users 
+                WHERE email = %s 
+                AND verification_code = %s 
+                AND code_expiry > NOW()
+            ''', (email, code))
+            
+            count = cursor.fetchone()[0]
+            return count > 0
+        except Exception as e:
+            print(f"Error verifying reset code: {e}")
+            return False
         finally:
             cursor.close()
             conn.close() 

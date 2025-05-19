@@ -1,296 +1,220 @@
 #:import utils kivy.utils
 #:import dp kivy.metrics.dp
 
-<MedicineDetailCard>:
-    orientation: 'vertical'
+<PrescriptionMedicineCard>:
     size_hint_y: None
-    height: dp(180)
-    md_bg_color: utils.get_color_from_hex('#FCFCFD')
-    radius: [10]
-    elevation: 0
+    height: self.minimum_height
     padding: dp(16)
-    spacing: dp(12)
-
-    # Medicine Name Header
-    BoxLayout:
-        size_hint_y: None
-        height: dp(32)
-        spacing: dp(8)
-
-        MDIcon:
-            icon: 'medication'
-            size_hint: None, None
-            size: dp(24), dp(24)
-            color: utils.get_color_from_hex('#344054')
-            pos_hint: {'center_y': 0.5}
-
-        MDLabel:
-            text: root.medicine_name
-            font_size: sp(16)
-            font_name: 'Roboto'
-            bold: True
-            color: utils.get_color_from_hex('#344054')
-
-    # Medicine Details Grid
-    GridLayout:
-        cols: 2
-        spacing: dp(16)
-        padding: [dp(8), 0, 0, 0]
-        size_hint_y: None
-        height: dp(100)
-
-        # Left Column
-        BoxLayout:
-            orientation: 'vertical'
-            spacing: dp(8)
-
-            # Usage Time
-            BoxLayout:
-                orientation: 'vertical'
-                spacing: dp(4)
-                
-                MDLabel:
-                    text: "Thời gian uống"
-                    font_size: sp(13)
-                    font_name: 'Roboto'
-                    bold: True
-                    color: utils.get_color_from_hex('#667085')
-                    size_hint_y: None
-                    height: dp(20)
-
-                MDLabel:
-                    text: root.usage_time
-                    font_size: sp(14)
-                    font_name: 'Roboto'
-                    color: utils.get_color_from_hex('#344054')
-                    size_hint_y: None
-                    height: dp(20)
-
-            # Quantity per time
-            BoxLayout:
-                orientation: 'vertical'
-                spacing: dp(4)
-
-                MDLabel:
-                    text: "Liều dùng"
-                    font_size: sp(13)
-                    font_name: 'Roboto'
-                    bold: True
-                    color: utils.get_color_from_hex('#667085')
-                    size_hint_y: None
-                    height: dp(20)
-
-                MDLabel:
-                    text: root.quantity_per_time + " viên/lần" if root.quantity_per_time else ""
-                    font_size: sp(14)
-                    font_name: 'Roboto'
-                    color: utils.get_color_from_hex('#344054')
-                    size_hint_y: None
-                    height: dp(20)
-
-        # Right Column
-        BoxLayout:
-            orientation: 'vertical'
-            spacing: dp(8)
-
-            # Total Quantity
-            BoxLayout:
-                orientation: 'vertical'
-                spacing: dp(4)
-
-                MDLabel:
-                    text: "Tổng số lượng"
-                    font_size: sp(13)
-                    font_name: 'Roboto'
-                    bold: True
-                    color: utils.get_color_from_hex('#667085')
-                    size_hint_y: None
-                    height: dp(20)
-
-                MDLabel:
-                    text: root.total_quantity + " viên" if root.total_quantity else ""
-                    font_size: sp(14)
-                    font_name: 'Roboto'
-                    color: utils.get_color_from_hex('#344054')
-                    size_hint_y: None
-                    height: dp(20)
-
-            # Duration
-            BoxLayout:
-                orientation: 'vertical'
-                spacing: dp(4)
-
-                MDLabel:
-                    text: "Thời gian điều trị"
-                    font_size: sp(13)
-                    font_name: 'Roboto'
-                    bold: True
-                    color: utils.get_color_from_hex('#667085')
-                    size_hint_y: None
-                    height: dp(20)
-
-                MDLabel:
-                    text: root.duration_days + " ngày" if root.duration_days else ""
-                    font_size: sp(14)
-                    font_name: 'Roboto'
-                    color: utils.get_color_from_hex('#344054')
-                    size_hint_y: None
-                    height: dp(24)
-
-    # Usage Instructions
+    spacing: dp(8)
+    radius: dp(12)
+    elevation: 2
+    md_bg_color: 1, 1, 1, 1
+    
     BoxLayout:
         orientation: 'vertical'
-        spacing: dp(4)
+        spacing: dp(8)
         size_hint_y: None
-        height: dp(60)
-
-        MDLabel:
-            text: "Hướng dẫn sử dụng"
-            font_size: sp(13)
-            font_name: 'Roboto'
-            bold: True
-            color: utils.get_color_from_hex('#667085')
+        height: self.minimum_height
+        
+        BoxLayout:
             size_hint_y: None
-            height: dp(20)
-
-        MDLabel:
-            text: root.usage_instruction
-            font_size: sp(14)
-            font_name: 'Roboto'
-            color: utils.get_color_from_hex('#344054')
+            height: self.minimum_height
+            spacing: dp(10)
+            
+            MDIcon:
+                icon: 'pill'
+                size_hint: None, None
+                size: dp(28), dp(28)
+                color: utils.get_color_from_hex('#406D96')
+                pos_hint: {'center_y': 0.5}
+            
+            MDLabel:
+                text: root.medicine_name
+                font_style: 'H6'
+                size_hint_y: None
+                height: self.texture_size[1]
+                bold: True
+                theme_text_color: 'Primary'
+        
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(4)
             size_hint_y: None
-            height: dp(40)
+            height: self.minimum_height
+            padding: [dp(36), 0, 0, 0]
+            
+            MDLabel:
+                text: "Liều dùng"
+                font_size: sp(13)
+                font_name: 'Roboto'
+                color: utils.get_color_from_hex('#667085')
+                size_hint_y: None
+                height: self.texture_size[1]
+            
+            MDLabel:
+                text: root.usage_info
+                font_size: sp(16)
+                font_name: 'Roboto'
+                bold: True
+                color: utils.get_color_from_hex('#344054')
+                size_hint_y: None
+                height: self.texture_size[1]
+        
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(4)
+            size_hint_y: None
+            height: self.minimum_height
+            padding: [dp(36), 0, 0, 0]
+            
+            MDLabel:
+                text: "Tổng số lượng"
+                font_size: sp(13)
+                font_name: 'Roboto'
+                color: utils.get_color_from_hex('#667085')
+                size_hint_y: None
+                height: self.texture_size[1]
+            
+            MDLabel:
+                text: f"{root.total_quantity} viên"
+                font_size: sp(16)
+                font_name: 'Roboto'
+                bold: True
+                color: utils.get_color_from_hex('#344054')
+                size_hint_y: None
+                height: self.texture_size[1]
+        
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(4)
+            size_hint_y: None
+            height: self.minimum_height
+            padding: [dp(36), 0, 0, 0]
+            
+            MDLabel:
+                text: "Thời gian điều trị"
+                font_size: sp(13)
+                font_name: 'Roboto'
+                color: utils.get_color_from_hex('#667085')
+                size_hint_y: None
+                height: self.texture_size[1]
+            
+            MDLabel:
+                text: root.duration
+                font_size: sp(16)
+                font_name: 'Roboto'
+                bold: True
+                color: utils.get_color_from_hex('#344054')
+                size_hint_y: None
+                height: self.texture_size[1]
+        
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(4)
+            size_hint_y: None
+            height: self.minimum_height
+            padding: [dp(36), 0, 0, 0]
+            
+            MDLabel:
+                text: "Hướng dẫn sử dụng"
+                font_size: sp(13)
+                font_name: 'Roboto'
+                color: utils.get_color_from_hex('#667085')
+                size_hint_y: None
+                height: self.texture_size[1]
+            
+            MDLabel:
+                text: root.usage_instruction
+                font_size: sp(15)
+                font_name: 'Roboto'
+                color: utils.get_color_from_hex('#344054')
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
 
 <PrescriptionDetailScreen>:
     BoxLayout:
         orientation: 'vertical'
-        canvas.before:
-            Color:
-                rgba: utils.get_color_from_hex('#F8F9FC')
-            Rectangle:
-                pos: self.pos
-                size: self.size
-
-        # Header with back button
+        spacing: dp(16)
+        padding: dp(16)
+        
         MDTopAppBar:
             title: "Chi tiết đơn thuốc"
+            left_action_items: [['arrow-left', lambda x: root.go_back()]]
+            right_action_items: [['printer', lambda x: root.print_prescription()], ['share', lambda x: root.share_prescription()]]
             elevation: 0
-            left_action_items: [["arrow-left", lambda x: root.go_back()]]
-            md_bg_color: utils.get_color_from_hex('#FFFFFF')
-            specific_text_color: utils.get_color_from_hex('#344054')
-
+            md_bg_color: app.theme_cls.primary_color
+        
         ScrollView:
-            do_scroll_x: False
-            
             BoxLayout:
                 orientation: 'vertical'
+                spacing: dp(16)
                 size_hint_y: None
                 height: self.minimum_height
                 padding: dp(16)
-                spacing: dp(16)
-
-                # Prescription Info Card
+                
                 MDCard:
-                    orientation: 'vertical'
                     size_hint_y: None
-                    height: dp(140)
-                    md_bg_color: utils.get_color_from_hex('#FFFFFF')
-                    radius: [16]
-                    elevation: 1
+                    height: dp(120)
                     padding: dp(16)
-                    spacing: dp(12)
-
-                    MDLabel:
-                        text: 'Thông tin đơn thuốc'
-                        font_size: sp(16)
-                        font_name: 'Roboto'
-                        bold: True
-                        color: utils.get_color_from_hex('#344054')
-                        size_hint_y: None
-                        height: dp(24)
-
-                    MDLabel:
-                        id: prescription_name
-                        font_size: sp(18)
-                        font_name: 'Roboto'
-                        bold: True
-                        color: utils.get_color_from_hex('#344054')
-                        size_hint_y: None
-                        height: dp(28)
-
-                    # Hospital Info
+                    spacing: dp(8)
+                    radius: dp(12)
+                    elevation: 2
+                    
                     BoxLayout:
-                        size_hint_y: None
-                        height: dp(24)
+                        orientation: 'vertical'
                         spacing: dp(8)
-
-                        MDIcon:
-                            icon: 'hospital-building'
-                            size_hint: None, None
-                            size: dp(20), dp(20)
-                            color: utils.get_color_from_hex('#667085')
-                            pos_hint: {'center_y': 0.5}
-
+                        pos_hint: {'center_y': 0.5}
+                        
+                        MDLabel:
+                            id: prescription_name
+                            text: ""
+                            font_style: 'H5'
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            bold: True
+                            theme_text_color: 'Primary'
+                            halign: 'center'
+                            valign: 'middle'
+                            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                            text_size: self.width, None
+                        
                         MDLabel:
                             id: hospital_name
-                            font_size: sp(14)
-                            font_name: 'Roboto'
-                            color: utils.get_color_from_hex('#667085')
-
-                    # Date Info
-                    BoxLayout:
-                        size_hint_y: None
-                        height: dp(24)
-                        spacing: dp(8)
-
-                        MDIcon:
-                            icon: 'calendar'
-                            size_hint: None, None
-                            size: dp(20), dp(20)
-                            color: utils.get_color_from_hex('#667085')
-                            pos_hint: {'center_y': 0.5}
-
+                            text: ""
+                            font_style: 'Body1'
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            theme_text_color: 'Secondary'
+                        
                         MDLabel:
                             id: created_date
-                            font_size: sp(14)
-                            font_name: 'Roboto'
-                            color: utils.get_color_from_hex('#667085')
-
-                # Medicine List Card
-                MDCard:
-                    orientation: 'vertical'
-                    size_hint_y: None
-                    height: medicines_layout.height + dp(60)
-                    md_bg_color: utils.get_color_from_hex('#FFFFFF')
-                    radius: [16]
-                    elevation: 1
-                    padding: dp(16)
-                    spacing: dp(16)
-
-                    # Medicine List Header
-                    BoxLayout:
-                        size_hint_y: None
-                        height: dp(28)
-                        spacing: dp(8)
-
-                        MDIcon:
-                            icon: 'pill'
+                            text: ""
+                            font_style: 'Body1'
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            theme_text_color: 'Secondary'
+                        
+                        MDChip:
+                            id: status_chip
+                            text: ""
+                            icon: "check-circle"
                             size_hint: None, None
-                            size: dp(24), dp(24)
-                            color: utils.get_color_from_hex('#344054')
-                            pos_hint: {'center_y': 0.5}
-
-                        MDLabel:
-                            text: 'Danh sách thuốc'
-                            font_size: sp(16)
-                            font_name: 'Roboto'
-                            bold: True
-                            color: utils.get_color_from_hex('#344054')
-
-                    # Medicines List
-                    BoxLayout:
-                        id: medicines_layout
-                        orientation: 'vertical'
-                        size_hint_y: None
-                        height: self.minimum_height
-                        spacing: dp(12) 
+                            size: dp(120), dp(32)
+                            pos_hint: {'center_x': 0.5}
+                
+                MDLabel:
+                    text: "Danh sách thuốc"
+                    font_style: 'H6'
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    bold: True
+                    theme_text_color: 'Primary'
+                    padding: [0, dp(8), 0, dp(8)]
+                
+                BoxLayout:
+                    id: medicines_layout
+                    orientation: 'vertical'
+                    spacing: dp(16)
+                    size_hint_y: None
+                    height: self.minimum_height 

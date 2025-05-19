@@ -54,8 +54,11 @@
                 height: dp(30)
 
             PrimaryButton:
-                text: 'ĐĂNG KÝ'
+                id: signup_button
+                text: 'ĐANG KIỂM TRA...' if root.is_checking_email else ('ĐANG XỬ LÝ...' if root.is_submitting else 'ĐĂNG KÝ')
                 pos_hint: {'center_x': 0.5}
+                disabled: root.is_submitting or root.is_checking_email
+                opacity: 0.5 if root.is_submitting or root.is_checking_email else 1
                 on_press: root.register()
 
         Widget:

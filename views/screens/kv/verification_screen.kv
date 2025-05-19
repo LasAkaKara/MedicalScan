@@ -57,13 +57,19 @@
                 height: dp(30)
 
             PrimaryButton:
-                text: 'XÁC THỰC'
+                id: verify_button
+                text: 'XÁC THỰC' if not root.is_verifying else 'ĐANG XÁC THỰC...'
                 pos_hint: {'center_x': 0.5}
+                disabled: root.is_verifying
+                opacity: 0.5 if root.is_verifying else 1
                 on_press: root.verify_code()
 
             TextButton:
-                text: 'Gửi lại mã xác thực'
+                id: resend_button
+                text: f'Gửi lại mã xác thực ({root.cooldown_seconds}s)' if root.cooldown_seconds > 0 else ('Đang gửi...' if root.is_resending else 'Gửi lại mã xác thực')
                 pos_hint: {'center_x': 0.5}
+                disabled: root.is_resending or root.cooldown_seconds > 0
+                opacity: 0.5 if root.is_resending or root.cooldown_seconds > 0 else 1
                 on_press: root.resend_code()
 
         Widget:

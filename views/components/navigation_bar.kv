@@ -76,31 +76,31 @@
         display_text: 'Trang chủ'
         icon: 'home'
         state: 'down' if root.parent and root.parent.parent and root.parent.parent.name == 'medical_home' else 'normal'
-        on_press: app.root.current_screen.switch_tab('home')
+        on_press: app.root.current = 'medical_home'
 
     NavButton:
         text: ''
         display_text: 'Quét thuốc'
         icon: 'camera'
         state: 'down' if root.parent and root.parent.parent and root.parent.parent.name == 'scan' else 'normal'
-        on_press: app.root.current_screen.switch_tab('scan')
+        on_press: app.root.current = 'scan'
 
     NavButton:
         text: ''
         display_text: 'Đơn thuốc'
         icon: 'history'
         state: 'down' if root.parent and root.parent.parent and root.parent.parent.name == 'history' else 'normal'
-        on_press: app.root.current_screen.switch_tab('history')
+        on_press: app.root.current = 'history'
 
     NavButton:
         text: ''
         display_text: 'Cá nhân'
         icon: 'account'
         state: 'down' if root.parent and root.parent.parent and root.parent.parent.name == 'profile' else 'normal'
-        on_press: app.root.current_screen.switch_tab('profile')
+        on_press: app.root.current = 'profile'
 
     NavButton:
         text: ''
         display_text: 'Đăng xuất'
         icon: 'logout'
-        on_press: app.root.current_screen.logout() 
+        on_press: app.root.current = 'login' 

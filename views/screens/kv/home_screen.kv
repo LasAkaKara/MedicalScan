@@ -9,12 +9,32 @@
             Rectangle:
                 pos: self.pos
                 size: self.size
+                
+        # Header with profile button
+        BoxLayout:
+            size_hint_y: 0.08
+            padding: dp(10)
+            
+            Widget:
+                size_hint_x: 0.1
+            
+            HeaderLabel:
+                text: 'MediScan'
+                font_size: sp(20)
+                size_hint_x: 0.8
+                halign: 'center'
+            
+            MDIconButton:
+                icon: "account-circle"
+                theme_text_color: "Primary"
+                size_hint_x: 0.1
+                on_release: app.root.current = 'profile'
 
         BoxLayout:
             orientation: 'vertical'
             padding: dp(20)
             spacing: dp(20)
-            size_hint_y: 0.9
+            size_hint_y: 0.82
 
             HeaderLabel:
                 text: 'Welcome to MediScan'
@@ -36,7 +56,7 @@
                 pos_hint: {'center_x': 0.5}
                 opacity: 0
                 on_parent: Animation(opacity=1, duration=0.5).start(self)
-                on_press: root.show_hello()
+                on_press: app.root.current = 'scan'
 
             Widget:
                 size_hint_y: 0.3

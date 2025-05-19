@@ -14,7 +14,7 @@
     BoxLayout:
         orientation: 'vertical'
         padding: dp(20)
-        spacing: dp(20)
+        spacing: dp(15)
 
         Widget:
             size_hint_y: 0.15
@@ -38,7 +38,7 @@
 
         BoxLayout:
             orientation: 'vertical'
-            spacing: dp(15)
+            spacing: dp(10)
             opacity: 0
             on_parent: Animation(opacity=1, duration=0.5).start(self)
 
@@ -60,42 +60,37 @@
                 height: dp(30)
 
             PrimaryButton:
-                text: 'ĐĂNG NHẬP'
+                id: login_button
+                text: 'ĐĂNG NHẬP' if not root.is_submitting else 'ĐANG XỬ LÝ...'
                 pos_hint: {'center_x': 0.5}
+                disabled: root.is_submitting
                 on_press: root.validate_login()
-
-            BoxLayout:
-                orientation: 'horizontal'
+                opacity: 0.5 if root.is_submitting else 1
+            
+                
+            MDLabel:
+                text: '[ref=forgot]Quên mật khẩu?[/ref]'
+                halign: 'center'
+                font_size: sp(16)
+                color: utils.get_color_from_hex(PRIMARY_COLOR)
                 size_hint_y: None
-                height: dp(40)
-                spacing: dp(10)
+                height: dp(30)
+                markup: True
+                on_ref_press: root.go_to_reset_password()
+
+            Widget:
+                size_hint_y: None
+                height: dp(15)
+
+            MDRaisedButton:
+                text: "Sign in with Google"
+                icon: "google"
                 pos_hint: {'center_x': 0.5}
-
-                TextButton:
-                    text: 'Xác thực tài khoản'
-                    size_hint: None, None
-                    size: self.texture_size
-                    color: utils.get_color_from_hex(PRIMARY_COLOR)
-                    on_press: 
-                        self.color = utils.get_color_from_hex(PRIMARY_DARK)
-                    on_release:
-                        self.color = utils.get_color_from_hex(PRIMARY_COLOR)
-                        root.go_to_verify()
-
-                Label:
-                    text: '|'
-                    size_hint: None, None
-                    size: self.texture_size
-                    color: utils.get_color_from_hex(DIVIDER_COLOR)
-
-                TextButton:
-                    text: 'Quên mật khẩu?'
-                    size_hint: None, None
-                    size: self.texture_size
-                    color: utils.get_color_from_hex(PRIMARY_COLOR)
-
-        Widget:
-            size_hint_y: 0.1
+                size_hint_x: 0.8
+                on_press: root.initiate_google_oauth()
+                md_bg_color: utils.get_color_from_hex("#4285F4")
+                theme_text_color: "Custom"
+                text_color: utils.get_color_from_hex("#FFFFFF")
 
         TextButton:
             text: 'Chưa có tài khoản? Đăng ký tại đây'

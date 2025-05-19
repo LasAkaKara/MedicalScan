@@ -1,0 +1,221 @@
+#:import utils kivy.utils
+#:import dp kivy.metrics.dp
+
+<SettingsScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: utils.get_color_from_hex('#F5F5F5')
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        
+        # Header with back button
+        BoxLayout:
+            size_hint: 1, 0.08
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex('#2196F3')
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            
+            MDIconButton:
+                icon: "arrow-left"
+                pos_hint: {"center_y": 0.5}
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+                on_release: app.root.current = 'medical_home'
+            
+            MDLabel:
+                text: "Settings"
+                halign: "center"
+                theme_text_color: "Custom"
+                text_color: 1, 1, 1, 1
+                font_style: "H6"
+            
+            Widget:
+                size_hint_x: 0.1
+        
+        # Settings content in a scroll view
+        ScrollView:
+            MDList:
+                # Camera settings
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(8)
+                    size_hint: None, None
+                    size: "800dp", "280dp"
+                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                    md_bg_color: 1, 1, 1, 1
+                    radius: [8]
+                    
+                    MDLabel:
+                        text: "Camera Settings"
+                        halign: "left"
+                        theme_text_color: "Primary"
+                        font_style: "H6"
+                        size_hint_y: None
+                        height: dp(48)
+                    
+                    MDSeparator:
+                        height: "1dp"
+                    
+                    # Camera flip
+                    BoxLayout:
+                        orientation: "horizontal"
+                        height: dp(48)
+                        size_hint_y: None
+                        
+                        MDLabel:
+                            text: "Flip Camera Horizontally"
+                            theme_text_color: "Primary"
+                        
+                        MDSwitch:
+                            active: root.camera_flip_horizontal
+                            on_active: root.toggle_camera_flip_horizontal()
+                    
+                    BoxLayout:
+                        orientation: "horizontal"
+                        height: dp(48)
+                        size_hint_y: None
+                        
+                        MDLabel:
+                            text: "Flip Camera Vertically"
+                            theme_text_color: "Primary"
+                        
+                        MDSwitch:
+                            active: root.camera_flip_vertical
+                            on_active: root.toggle_camera_flip_vertical()
+                    
+                    # Camera resolution
+                    BoxLayout:
+                        orientation: "horizontal"
+                        height: dp(48)
+                        size_hint_y: None
+                        
+                        MDLabel:
+                            text: "Camera Resolution"
+                            theme_text_color: "Primary"
+                        
+                        Spinner:
+                            id: camera_resolution
+                            text: root.camera_resolution
+                            values: ["640x480", "800x600", "1280x720", "1920x1080"]
+                            on_text: root.set_camera_resolution(self.text)
+                    
+                    # Camera quality
+                    BoxLayout:
+                        orientation: "horizontal"
+                        height: dp(48)
+                        size_hint_y: None
+                        
+                        MDLabel:
+                            text: "Image Quality: " + str(int(quality_slider.value)) + "%"
+                            theme_text_color: "Primary"
+                        
+                        MDSlider:
+                            id: quality_slider
+                            min: 10
+                            max: 100
+                            value: root.camera_quality
+                            on_value: root.set_camera_quality(self.value)
+                
+                # App settings
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(8)
+                    size_hint: None, None
+                    size: "800dp", "200dp"
+                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                    md_bg_color: 1, 1, 1, 1
+                    radius: [8]
+                    
+                    MDLabel:
+                        text: "App Settings"
+                        halign: "left"
+                        theme_text_color: "Primary"
+                        font_style: "H6"
+                        size_hint_y: None
+                        height: dp(48)
+                    
+                    MDSeparator:
+                        height: "1dp"
+                    
+                    # Auto detect documents
+                    BoxLayout:
+                        orientation: "horizontal"
+                        height: dp(48)
+                        size_hint_y: None
+                        
+                        MDLabel:
+                            text: "Auto-detect Documents"
+                            theme_text_color: "Primary"
+                        
+                        MDSwitch:
+                            active: root.auto_detect_documents
+                            on_active: root.toggle_auto_detect_documents()
+                    
+                    # Save original images
+                    BoxLayout:
+                        orientation: "horizontal"
+                        height: dp(48)
+                        size_hint_y: None
+                        
+                        MDLabel:
+                            text: "Save Original Images"
+                            theme_text_color: "Primary"
+                        
+                        MDSwitch:
+                            active: root.save_original_images
+                            on_active: root.toggle_save_original_images()
+                
+                # Theme settings
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(8)
+                    size_hint: None, None
+                    size: "800dp", "160dp"
+                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                    md_bg_color: 1, 1, 1, 1
+                    radius: [8]
+                    
+                    MDLabel:
+                        text: "Theme Settings"
+                        halign: "left"
+                        theme_text_color: "Primary"
+                        font_style: "H6"
+                        size_hint_y: None
+                        height: dp(48)
+                    
+                    MDSeparator:
+                        height: "1dp"
+                    
+                    # Dark mode
+                    BoxLayout:
+                        orientation: "horizontal"
+                        height: dp(48)
+                        size_hint_y: None
+                        
+                        MDLabel:
+                            text: "Dark Mode"
+                            theme_text_color: "Primary"
+                        
+                        MDSwitch:
+                            active: root.dark_mode
+                            on_active: root.toggle_dark_mode()
+                
+                # Save button
+                BoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(60)
+                    padding: dp(16)
+                    
+                    Widget:
+                        size_hint_x: 0.7
+                    
+                    MDRaisedButton:
+                        text: "Save Settings"
+                        on_release: root.save_settings() 

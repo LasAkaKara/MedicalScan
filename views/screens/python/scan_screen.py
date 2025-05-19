@@ -1,6 +1,6 @@
 from kivy.uix.screenmanager import Screen
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, ListProperty, BooleanProperty
+from kivy.properties import ObjectProperty, ListProperty, BooleanProperty, NumericProperty
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from kivy.uix.image import Image
@@ -13,15 +13,22 @@ from kivy.uix.scatter import Scatter
 from kivymd.uix.button import MDFloatingActionButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.snackbar import Snackbar
+from kivy.core.window import Window
+from kivy.metrics import dp
 import cv2
 import numpy as np
 import time
 import os
 import threading
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class CornerMarker(Scatter):
     """Improved draggable corner marker for manual cropping"""
-    def __init__(self, corner_index, **kwargs):
+    def __init__(self, corner_index=0, **kwargs):
         super(CornerMarker, self).__init__(**kwargs)
         self.corner_index = corner_index
         self.do_rotation = False
@@ -34,54 +41,158 @@ class CornerMarker(Scatter):
         colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (1, 1, 0, 1)]
         self.color = colors[corner_index % 4]
 
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+            return True
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if touch.grab_current is self:
+            self.pos = (touch.x - self.width/2, touch.y - self.height/2)
+            # Update crop points in parent
+            if self.parent and hasattr(self.parent.parent, 'update_crop_point'):
+                marker_id = self.id.replace('_', '')  # Convert 'top_left' to 'topleft'
+                self.parent.parent.update_crop_point(marker_id, touch.pos)
+            return True
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if touch.grab_current is self:
+            touch.ungrab(self)
+            return True
+        return super().on_touch_up(touch)
+
+# Load the KV file after CornerMarker is defined
+Builder.load_file('views/screens/kv/scan_screen.kv')
+
 class ScanScreen(Screen):
     camera = ObjectProperty(None)
     crop_points = ListProperty([(0, 0), (0, 0), (0, 0), (0, 0)])
     is_processing = BooleanProperty(False)
+    is_cropping = BooleanProperty(False)
+    has_image = BooleanProperty(False)
+    rotation_angle = NumericProperty(0)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        logger.debug("Initializing ScanScreen")
         # Create prescriptions directory if it doesn't exist
         self.prescriptions_dir = 'prescriptions'
         if not os.path.exists(self.prescriptions_dir):
             os.makedirs(self.prescriptions_dir)
         
         self.current_image = None
-        self.is_cropping = False
         self.corner_markers = []
         self.capture = None
         self.frame_available = False
         self.frame = None
         self.camera_initialized = False
         self.crop_lines = InstructionGroup()
+        self.texture = None
+        self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
+        if self._keyboard:
+            self._keyboard.bind(on_key_down=self._on_key_down)
+        self.original_image = None
+        self.rotation_angle = 180  # Set initial rotation to 180 degrees
+        
+        # Don't start camera here, wait for on_enter
     
+    def _on_keyboard_closed(self):
+        self._keyboard.unbind(on_key_down=self._on_key_down)
+        self._keyboard = None
+
+    def _on_key_down(self, keyboard, keycode, text, modifiers):
+        if keycode[1] == 'r':  # Press 'r' to rotate
+            self.rotate_image()
+        return True
+
     def on_enter(self):
         """Called when the screen is entered"""
-        if not self.is_cropping:
-            self.start_camera()
+        logger.debug("Entering ScanScreen")
+        if not self.is_cropping and not self.camera_initialized:
+            # Use a small delay to ensure UI is fully loaded
+            Clock.schedule_once(self.start_camera, 0.5)
     
     def on_leave(self):
         """Called when leaving the screen"""
+        logger.debug("Leaving ScanScreen")
         self.stop_camera()
     
-    def start_camera(self):
+    def start_camera(self, dt=None):
         """Initialize and start the camera"""
+        logger.debug("Starting camera initialization")
         if self.camera_initialized:
+            logger.debug("Camera already initialized")
             return
             
-        # Try different camera indices
-        for camera_index in range(3):  # Try indices 0, 1, 2
+        # Try to get camera settings
+        resolution_width = 640
+        resolution_height = 480
+        
+        try:
+            from views.screens.python.settings_screen import SettingsScreen
+            settings = next((screen for screen in self.manager.screens if isinstance(screen, SettingsScreen)), None)
+            
+            if settings and settings.camera_resolution:
+                resolution_parts = settings.camera_resolution.split('x')
+                if len(resolution_parts) == 2:
+                    resolution_width = int(resolution_parts[0])
+                    resolution_height = int(resolution_parts[1])
+        except Exception as e:
+            logger.warning(f"Could not get camera resolution settings: {e}")
+            
+        # Try with DirectShow first on Windows (best compatibility)
+        try:
+            logger.debug("Trying camera with DirectShow backend")
+            self.capture = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+            if self.capture.isOpened():
+                # Set camera properties
+                self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, resolution_width)
+                self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution_height)
+                self.capture.set(cv2.CAP_PROP_FPS, 30)
+                self.capture.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+                self.capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)  # Auto exposure
+                
+                # Check if we can read a frame
+                ret, frame = self.capture.read()
+                if ret:
+                    logger.debug("Successfully initialized camera with DirectShow")
+                    self.camera_initialized = True
+                    # Start camera update in a separate thread
+                    self.camera_thread = threading.Thread(target=self.camera_update_thread)
+                    self.camera_thread.daemon = True
+                    self.camera_thread.start()
+                    
+                    # Schedule frame display update
+                    Clock.schedule_interval(self.update_texture, 1.0/30.0)
+                    return
+                else:
+                    logger.warning("Could not read frame from camera")
+                    self.capture.release()
+            else:
+                logger.warning("Could not open camera with DirectShow")
+        except Exception as e:
+            logger.error(f"Error initializing camera with DirectShow: {e}")
+            if self.capture:
+                self.capture.release()
+        
+        # Fallback to trying different camera indices with different backends
+        for camera_index in range(2):  # Try indices 0, 1
             try:
+                logger.debug(f"Fallback: Trying camera index: {camera_index}")
+                # Try different backends (MSMF on Windows, V4L on Linux)
                 self.capture = cv2.VideoCapture(camera_index)
                 if self.capture.isOpened():
-                    # Set lower resolution for better performance
+                    # Set camera properties
                     self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
                     self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                    self.capture.set(cv2.CAP_PROP_FPS, 30)
                     
                     # Check if we can read a frame
                     ret, frame = self.capture.read()
                     if ret:
-                        print(f"Camera initialized with index {camera_index}")
+                        logger.debug(f"Successfully initialized camera with index {camera_index}")
                         self.camera_initialized = True
                         # Start camera update in a separate thread
                         self.camera_thread = threading.Thread(target=self.camera_update_thread)
@@ -92,17 +203,21 @@ class ScanScreen(Screen):
                         Clock.schedule_interval(self.update_texture, 1.0/30.0)
                         return
                     else:
+                        logger.warning(f"Could not read frame from camera {camera_index}")
                         self.capture.release()
+                else:
+                    logger.warning(f"Could not open camera {camera_index}")
             except Exception as e:
-                print(f"Error initializing camera {camera_index}: {e}")
+                logger.error(f"Error initializing camera {camera_index}: {e}")
                 if self.capture:
                     self.capture.release()
         
-        print("Failed to initialize any camera")
+        logger.error("Failed to initialize any camera")
         self.show_error_dialog("Camera Error", "Failed to initialize camera. Please check your camera connection.")
     
     def stop_camera(self):
         """Stop the camera"""
+        logger.debug("Stopping camera")
         if self.capture and self.camera_initialized:
             self.camera_initialized = False
             self.capture.release()
@@ -111,40 +226,125 @@ class ScanScreen(Screen):
     
     def camera_update_thread(self):
         """Camera update thread to capture frames"""
+        logger.debug("Starting camera update thread")
+        # Set a flag to keep track of consecutive failures
+        consecutive_failures = 0
+        
         while self.camera_initialized and self.capture and self.capture.isOpened():
             try:
                 ret, frame = self.capture.read()
-                if ret:
+                if ret and frame is not None and frame.size > 0:
+                    # Reset failure count on success
+                    consecutive_failures = 0
                     # Store the frame for the main thread to use
                     self.frame = frame
                     self.frame_available = True
+                    # Small sleep to prevent flooding the queue
+                    time.sleep(0.01)
                 else:
-                    time.sleep(0.01)  # Short sleep to prevent CPU overuse
+                    logger.warning(f"Failed to read frame from camera, ret={ret}")
+                    consecutive_failures += 1
+                    
+                    # Only try to reinitialize after several consecutive failures
+                    if consecutive_failures > 5:
+                        logger.error(f"Multiple consecutive failures: {consecutive_failures}")
+                        # Try to reinitialize the camera
+                        if self.capture:
+                            self.capture.release()
+                            self.capture = None
+                        
+                        try:
+                            self.capture = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+                            # Reset count if we successfully reopen
+                            if self.capture and self.capture.isOpened():
+                                consecutive_failures = 0
+                                logger.info("Camera successfully reinitialized")
+                            else:
+                                logger.error("Failed to reinitialize camera")
+                                break
+                        except Exception as e:
+                            logger.error(f"Error reinitializing camera: {e}")
+                            break
+                    
+                    time.sleep(0.1)  # Wait before trying again
             except Exception as e:
-                print(f"Error in camera thread: {e}")
+                logger.error(f"Error in camera thread: {e}")
+                consecutive_failures += 1
+                if consecutive_failures > 10:
+                    logger.error("Too many errors, stopping camera thread")
+                    break
                 time.sleep(0.1)
+        
+        logger.debug("Camera update thread exiting")
+        Clock.schedule_once(lambda dt: self.handle_camera_failure(), 0)
     
     def update_texture(self, dt):
         """Update the texture with the latest frame (called in main thread)"""
         if self.frame_available and self.frame is not None:
-            # Convert to texture
-            # Flip the image vertically to fix upside-down preview
-            frame = cv2.flip(self.frame, 0)
-            
-            # Convert BGR to RGB for proper color display
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Create texture
-            buf = frame_rgb.tobytes()
-            texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='rgb')
-            texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
-            
-            # Display image
-            self.ids.camera_image.texture = texture
-            self.frame_available = False
+            try:
+                # Create a copy to avoid race conditions
+                if self.frame.size == 0:
+                    logger.warning("Empty frame received, skipping texture update")
+                    self.frame_available = False
+                    return
+                
+                frame_copy = self.frame.copy()
+                
+                # Convert BGR to RGB for proper color display
+                try:
+                    frame_rgb = cv2.cvtColor(frame_copy, cv2.COLOR_BGR2RGB)
+                except cv2.error as e:
+                    logger.warning(f"Failed to convert frame colors: {e}")
+                    self.frame_available = False
+                    return
+                
+                # Apply rotation (180 degrees)
+                frame_rgb = cv2.rotate(frame_rgb, cv2.ROTATE_180)
+                
+                # Apply camera settings if available
+                try:
+                    from views.screens.python.settings_screen import SettingsScreen
+                    settings = next((screen for screen in self.manager.screens if isinstance(screen, SettingsScreen)), None)
+                    
+                    if settings:
+                        # Apply horizontal flip if enabled
+                        if settings.camera_flip_horizontal:
+                            frame_rgb = cv2.flip(frame_rgb, 1)
+                        
+                        # Apply vertical flip if enabled
+                        if settings.camera_flip_vertical:
+                            frame_rgb = cv2.flip(frame_rgb, 0)
+                except Exception as e:
+                    logger.warning(f"Could not apply camera settings: {e}")
+                
+                # Create texture
+                buf = frame_rgb.tobytes()
+                texture = Texture.create(size=(frame_rgb.shape[1], frame_rgb.shape[0]), colorfmt='rgb')
+                texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+                
+                # Display image
+                if hasattr(self, 'ids') and 'camera_image' in self.ids:
+                    self.ids.camera_image.texture = texture
+                    self.ids.camera_image.canvas.ask_update()
+                    # Log only occasionally for debugging
+                    if hasattr(self, '_log_counter'):
+                        self._log_counter += 1
+                        if self._log_counter % 30 == 0:  # Log every ~30 frames (~1 second)
+                            logger.debug("Camera texture updated successfully")
+                    else:
+                        self._log_counter = 0
+                        logger.debug("First camera texture update")
+                else:
+                    logger.warning("Camera image widget not found in ids")
+                self.frame_available = False
+            except Exception as e:
+                logger.error(f"Error updating texture: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
     
     def take_picture(self):
         """Capture an image from the camera"""
+        logger.debug("Taking picture")
         if self.frame is not None:
             # Show processing indicator
             self.is_processing = True
@@ -153,7 +353,27 @@ class ScanScreen(Screen):
             self.stop_camera()
             
             # Store the captured image
+            # Deep copy to avoid race conditions
             self.current_image = self.frame.copy()
+            
+            # Apply 180 degree rotation (consistent with preview)
+            self.current_image = cv2.rotate(self.current_image, cv2.ROTATE_180)
+            
+            # Apply camera settings from settings screen
+            try:
+                from views.screens.python.settings_screen import SettingsScreen
+                settings = next((screen for screen in self.manager.screens if isinstance(screen, SettingsScreen)), None)
+                
+                if settings:
+                    # Apply horizontal flip if enabled
+                    if settings.camera_flip_horizontal:
+                        self.current_image = cv2.flip(self.current_image, 1)
+                    
+                    # Apply vertical flip if enabled
+                    if settings.camera_flip_vertical:
+                        self.current_image = cv2.flip(self.current_image, 0)
+            except Exception as e:
+                logger.warning(f"Could not apply camera settings to captured image: {e}")
             
             # Display the captured image
             self.display_image(self.current_image)
@@ -163,19 +383,39 @@ class ScanScreen(Screen):
     
     def display_image(self, image):
         """Display an image on the screen"""
-        # Convert BGR to RGB for proper color display
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
-        # Create texture
-        buf = image_rgb.tobytes()
-        texture = Texture.create(size=(image.shape[1], image.shape[0]), colorfmt='rgb')
-        texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
-        
-        # Display image
-        self.ids.camera_image.texture = texture
+        try:
+            logger.debug("Displaying image")
+            if image is None or image.size == 0:
+                logger.error("Cannot display empty image")
+                return
+            
+            # Make a deep copy to avoid modifying the original
+            display_img = image.copy()
+            
+            # Convert BGR to RGB for proper color display
+            # This is required because OpenCV uses BGR and Kivy expects RGB
+            image_rgb = cv2.cvtColor(display_img, cv2.COLOR_BGR2RGB)
+            
+            # Create texture
+            buf = image_rgb.tobytes()
+            texture = Texture.create(size=(image_rgb.shape[1], image_rgb.shape[0]), colorfmt='rgb')
+            texture.blit_buffer(buf, colorfmt='rgb', bufferfmt='ubyte')
+            
+            # Display image
+            if hasattr(self, 'ids') and 'camera_image' in self.ids:
+                logger.debug("Updating display image texture")
+                self.ids.camera_image.texture = texture
+                self.ids.camera_image.canvas.ask_update()
+            else:
+                logger.warning("Camera image widget not found in ids")
+        except Exception as e:
+            logger.error(f"Error displaying image: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
     
     def start_cropping(self):
         """Enter cropping mode"""
+        logger.debug("Starting cropping mode")
         self.is_cropping = True
         self.is_processing = False
         
@@ -228,6 +468,7 @@ class ScanScreen(Screen):
     def _detect_document_edges_thread(self):
         """Thread function for document edge detection"""
         try:
+            logger.debug("Starting document edge detection")
             # Convert to grayscale
             gray = cv2.cvtColor(self.current_image, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (5, 5), 0)
@@ -280,29 +521,51 @@ class ScanScreen(Screen):
                     duration=3
                 ).open(), 0.5)
         except Exception as e:
-            print(f"Error in document detection: {e}")
+            logger.error(f"Error in document detection: {e}")
+            self.is_processing = False
+            self.show_error_dialog("Detection Error", "Failed to detect document edges. Please try again.")
         finally:
             # Hide processing indicator
             Clock.schedule_once(lambda dt: setattr(self, 'is_processing', False), 0)
     
     def _update_crop_points(self, points):
         """Update crop points and refresh corner markers"""
-        self.crop_points = points
+        logger.debug(f"Updating crop points to: {points}")
+        # Make sure points are integers and within image boundaries
+        valid_points = []
+        if self.current_image is not None:
+            h, w = self.current_image.shape[:2]
+            for x, y in points:
+                # Ensure points are within image boundaries
+                x = max(0, min(int(x), w-1))
+                y = max(0, min(int(y), h-1))
+                valid_points.append((x, y))
+        else:
+            valid_points = [(int(x), int(y)) for x, y in points]
+        
+        self.crop_points = valid_points
         self.refresh_corner_markers()
     
     def refresh_corner_markers(self):
         """Refresh corner markers based on current crop points"""
         # Clear any existing markers
         for marker in self.corner_markers:
-            self.ids.crop_overlay.remove_widget(marker)
+            if marker.parent:
+                self.ids.crop_overlay.remove_widget(marker)
         self.corner_markers = []
         
         # Add new markers at crop points
         for i, point in enumerate(self.crop_points):
-            marker = CornerMarker(i, pos=point)
-            marker.bind(pos=lambda instance, pos, idx=i: self.update_crop_point(idx, pos))
-            self.corner_markers.append(marker)
-            self.ids.crop_overlay.add_widget(marker)
+            try:
+                marker = CornerMarker(i, pos=point)
+                marker.bind(pos=lambda instance, pos, idx=i: self.update_crop_point(idx, pos))
+                self.corner_markers.append(marker)
+                self.ids.crop_overlay.add_widget(marker)
+                logger.debug(f"Added corner marker {i} at position {point}")
+            except Exception as e:
+                logger.error(f"Error adding corner marker: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
     
     def update_crop_point(self, index, pos):
         """Update crop point when marker is moved"""
@@ -322,6 +585,7 @@ class ScanScreen(Screen):
     def _process_and_save_image(self):
         """Process and save the cropped image in a background thread"""
         try:
+            logger.debug("Starting image processing")
             # Apply perspective transform
             src_pts = np.array(self.crop_points, dtype=np.float32)
             
@@ -372,7 +636,7 @@ class ScanScreen(Screen):
             # Exit cropping mode on main thread
             Clock.schedule_once(lambda dt: self.exit_cropping_mode(), 0.5)
         except Exception as e:
-            print(f"Error processing image: {e}")
+            logger.error(f"Error processing image: {e}")
             # Show error on main thread
             Clock.schedule_once(lambda dt: self.show_error_dialog(
                 "Processing Error", 
@@ -385,6 +649,7 @@ class ScanScreen(Screen):
     def enhance_document_image(self, image):
         """Enhance document image for better readability"""
         try:
+            logger.debug("Starting image enhancement")
             # Convert to grayscale
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             
@@ -404,7 +669,7 @@ class ScanScreen(Screen):
             # Return the enhanced image
             return result
         except Exception as e:
-            print(f"Error enhancing image: {e}")
+            logger.error(f"Error enhancing image: {e}")
             return image  # Return original if enhancement fails
     
     def cancel_crop(self, instance):
@@ -488,7 +753,7 @@ class ScanScreen(Screen):
             Clock.schedule_once(lambda dt: self.display_image(self.current_image), 0)
             Clock.schedule_once(lambda dt: self.start_cropping(), 0.5)
         except Exception as e:
-            print(f"Error loading image: {e}")
+            logger.error(f"Error loading image: {e}")
             Clock.schedule_once(lambda dt: self.show_error_dialog(
                 "Loading Error", 
                 f"Failed to load image: {str(e)}"
@@ -510,4 +775,65 @@ class ScanScreen(Screen):
                 )
             ]
         )
-        dialog.open() 
+        dialog.open()
+    
+    def handle_camera_failure(self):
+        """Handle camera thread failure"""
+        if self.camera_initialized:
+            logger.debug("Handling camera failure")
+            self.camera_initialized = False
+            # Notify user of camera issue
+            self.show_error_dialog("Camera Error", "Camera disconnected or not responding. Please try again.")
+
+    def toggle_crop_mode(self):
+        self.is_cropping = not self.is_cropping
+        if self.is_cropping and self.has_image:
+            # Initialize crop points to image corners
+            image = self.ids.camera_image
+            x, y = image.pos
+            w, h = image.size
+            self.crop_points = [
+                (x + dp(20), y + dp(20)),           # Top-left
+                (x + w - dp(20), y + dp(20)),       # Top-right
+                (x + w - dp(20), y + h - dp(20)),   # Bottom-right
+                (x + dp(20), y + h - dp(20))        # Bottom-left
+            ]
+
+    def rotate_image(self):
+        """Rotate the current image by 180 degrees"""
+        if self.current_image is not None:
+            logger.debug("Rotating image by 180 degrees")
+            # Rotate the current image
+            self.current_image = cv2.rotate(self.current_image, cv2.ROTATE_180)
+            
+            # Update the display
+            self.display_image(self.current_image)
+            
+            # If we have an original image, keep it in sync
+            if hasattr(self, 'original_image') and self.original_image is not None:
+                self.original_image = cv2.rotate(self.original_image, cv2.ROTATE_180)
+
+    def apply_crop(self):
+        if self.has_image and self.is_cropping:
+            # Convert crop points to numpy array
+            pts = np.float32([[p[0], p[1]] for p in self.crop_points])
+            
+            # Get image dimensions
+            image = self.ids.camera_image
+            w, h = image.size
+            
+            # Define the output rectangle (destination points)
+            dst = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
+            
+            # Calculate perspective transform matrix
+            M = cv2.getPerspectiveTransform(pts, dst)
+            
+            # Apply perspective transform
+            if self.current_image is not None:
+                warped = cv2.warpPerspective(self.current_image, M, (int(w), int(h)))
+                self.current_image = warped
+                # Update the display
+                # You'll need to implement the logic to update the image display
+            
+            # Exit crop mode
+            self.is_cropping = False 
