@@ -38,7 +38,6 @@ class MedicalApp(MDApp):
         self.db_controller = DatabaseController('app.db')
         self.db_controller.create_tables()
         
-        self.theme_cls.primary_palette = "Blue"
         sm = ScreenManager(transition=SlideTransition())
         sm.add_widget(LoginScreen(name='login'))
         sm.add_widget(SignupScreen(name='signup'))

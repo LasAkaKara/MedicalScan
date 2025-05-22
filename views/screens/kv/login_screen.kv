@@ -4,61 +4,95 @@
 <LoginScreen>:
     email: email
     password: password
-    canvas.before:
-        Color:
-            rgba: utils.get_color_from_hex(BACKGROUND_COLOR)
-        Rectangle:
-            pos: self.pos
-            size: self.size
+    
+    GridLayout:
+        cols: 1
+        rows: 2
+        BoxLayout:
+            size_hint_y: None
+            height: 260
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex(PRIMARY_COLOR)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+                    source: "assets/login-bg.jpg"
+            orientation: 'vertical'
+            padding: [dp(10), dp(60)]
+            spacing: dp(15)
+        
+            Widget:
+                size_hint_y: 0.15
 
-    BoxLayout:
-        orientation: 'vertical'
-        padding: dp(20)
-        spacing: dp(15)
+            HeaderLabel:
+                text: 'MediScan'
+                font_size: sp(32)
+                color: utils.get_color_from_hex(BACKGROUND_COLOR)
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
 
-        Widget:
-            size_hint_y: 0.15
+            SubtitleLabel:
+                text: 'Hiểu Rõ Mọi Thành Phần\nNhắc Nhở Theo Dõi Sức Khỏe'
+                halign: 'center'
+                color: utils.get_color_from_hex(BACKGROUND_COLOR)
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
 
-        HeaderLabel:
-            text: 'MediScan'
-            font_size: sp(32)
-            color: utils.get_color_from_hex(PRIMARY_COLOR)
-            opacity: 0
-            on_parent: Animation(opacity=1, duration=0.5).start(self)
-
-        SubtitleLabel:
-            text: 'Hiểu Rõ Mọi Thành Phần\nNhắc Nhở Theo Dõi Sức Khỏe'
-            halign: 'center'
-            color: utils.get_color_from_hex(SECONDARY_TEXT)
-            opacity: 0
-            on_parent: Animation(opacity=1, duration=0.5).start(self)
-
-        Widget:
-            size_hint_y: 0.1
 
         BoxLayout:
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex("#f9fafc")
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
             orientation: 'vertical'
+            padding: [dp(0), dp(10)]
             spacing: dp(10)
             opacity: 0
             on_parent: Animation(opacity=1, duration=0.5).start(self)
 
+            FormLabel:
+                text: "Đăng nhập"
+                halign: "center"
+                size_hint_y: None
+                height: self.texture_size[1]
+
             CustomTextInput:
                 id: email
                 hint_text: 'Email'
+                md_bg_color: utils.get_color_from_hex(HINT_COLOR)
                 pos_hint: {'center_x': 0.5}
+                icon_left: "account"
+                
 
             PasswordField:
                 id: password
                 hint_text: 'Mật khẩu'
                 pos_hint: {'center_x': 0.5}
+                icon_right: "eye"
+
+
+            MDLabel:
+                text: '[ref=forgot]Quên mật khẩu?[/ref]'
+                halign: 'right'
+                font_size: sp(16)
+                color: utils.get_color_from_hex(PRIMARY_COLOR)
+                size_hint_y: None
+                height: dp(30)
+                padding: [dp(20), dp(10)]
+                markup: True
+                on_ref_press: root.go_to_reset_password()
 
             Label:
                 id: error_label
                 text: ''
                 color: utils.get_color_from_hex(ERROR_COLOR)
                 size_hint_y: None
-                height: dp(30)
+                height: dp(20)
 
+            
             PrimaryButton:
                 id: login_button
                 text: 'ĐĂNG NHẬP' if not root.is_submitting else 'ĐANG XỬ LÝ...'
@@ -67,34 +101,27 @@
                 on_press: root.validate_login()
                 opacity: 0.5 if root.is_submitting else 1
             
-                
-            MDLabel:
-                text: '[ref=forgot]Quên mật khẩu?[/ref]'
-                halign: 'center'
-                font_size: sp(16)
-                color: utils.get_color_from_hex(PRIMARY_COLOR)
-                size_hint_y: None
-                height: dp(30)
-                markup: True
-                on_ref_press: root.go_to_reset_password()
-
             Widget:
                 size_hint_y: None
                 height: dp(15)
 
             MDRaisedButton:
-                text: "Sign in with Google"
-                icon: "google"
-                pos_hint: {'center_x': 0.5}
+                pos_hint: {"center_x": 0.5}
+                text: "Đăng nhập với Google"
                 size_hint_x: 0.8
                 on_press: root.initiate_google_oauth()
-                md_bg_color: utils.get_color_from_hex("#4285F4")
+                md_bg_color: utils.get_color_from_hex(PRIMARY_COLOR)
                 theme_text_color: "Custom"
                 text_color: utils.get_color_from_hex("#FFFFFF")
+                icon: "google"
 
-        TextButton:
-            text: 'Chưa có tài khoản? Đăng ký tại đây'
-            pos_hint: {'center_x': 0.5}
-            opacity: 0
-            on_parent: Animation(opacity=1, duration=0.5).start(self)
-            on_press: root.manager.current = 'signup' 
+                
+            TextButton:
+                text: 'Chưa có tài khoản? Đăng ký tại đây'
+                pos_hint: {'center_x': 0.5}
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
+                on_press: root.manager.current = 'signup' 
+
+
+        

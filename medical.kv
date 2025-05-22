@@ -10,31 +10,14 @@
 #:include views/screens/kv/reset_password_screen.kv
 #:include views/screens/kv/home_screen.kv
 
-<CustomTextInput@TextInput>:
+<CustomTextInput@MDTextField>:
+    theme_text_color: "Custom"
+    text_color: utils.get_color_from_hex("#333333")
     size_hint: (0.85, None)
     height: dp(45)
     multiline: False
-    background_color: 0, 0, 0, 0
-    cursor_color: utils.get_color_from_hex('#406D96')
     padding: [dp(20), dp(10)]
     font_size: '16sp'
-    hint_text_color: utils.get_color_from_hex('#999999')
-    foreground_color: utils.get_color_from_hex('#333333')
-    canvas.before:
-        Color:
-            rgba: utils.get_color_from_hex('#F2F2F2')
-        RoundedRectangle:
-            pos: self.pos
-            size: self.size
-            radius: [10]
-        Color:
-            rgba: utils.get_color_from_hex('#406D96') if self.focus else utils.get_color_from_hex('#E0E0E0')
-        Line:
-            rounded_rectangle: [self.x, self.y, self.width, self.height, 10]
-            width: 1.5 if self.focus else 1
-    on_focus:
-        Animation(height=dp(50) if self.focus else dp(45), duration=0.2).start(self)
-        Animation(font_size=sp(17) if self.focus else sp(16), duration=0.2).start(self)
 
 <CustomButton@Button>:
     size_hint: (0.85, None)
