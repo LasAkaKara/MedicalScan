@@ -1,4 +1,5 @@
 from kivy.uix.screenmanager import Screen
+from views.screens.python.root_screen import RootWidget
 from kivy.properties import ObjectProperty, BooleanProperty
 from kivy.animation import Animation
 from controllers.auth_controller import AuthController

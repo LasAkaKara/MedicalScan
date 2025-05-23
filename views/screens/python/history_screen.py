@@ -5,15 +5,12 @@ from kivy.clock import Clock
 from kivymd.uix.card import MDCard
 from kivymd.uix.label import MDLabel
 from kivy.metrics import dp, sp
-from kivy.lang import Builder
 from kivy.utils import get_color_from_hex
 import json
 from datetime import datetime
 from kivy.animation import Animation
 from kivy.properties import BooleanProperty
 
-# Load the KV file
-Builder.load_file('views/screens/kv/history_screen.kv')
 
 class PrescriptionCard(MDCard):
     show_details = BooleanProperty(False)

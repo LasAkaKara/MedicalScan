@@ -1,5 +1,4 @@
 from kivy.uix.screenmanager import Screen
-from kivy.lang import Builder
 from kivy.properties import ObjectProperty, ListProperty, BooleanProperty, NumericProperty
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
@@ -63,8 +62,6 @@ class CornerMarker(Scatter):
             return True
         return super().on_touch_up(touch)
 
-# Load the KV file after CornerMarker is defined
-Builder.load_file('views/screens/kv/scan_screen.kv')
 
 class ScanScreen(Screen):
     camera = ObjectProperty(None)

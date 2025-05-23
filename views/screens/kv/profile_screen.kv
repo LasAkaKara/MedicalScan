@@ -194,35 +194,7 @@
                 size: self.size
         
         # Header with back button
-        BoxLayout:
-            size_hint: 1, 0.08
-            canvas.before:
-                Color:
-                    rgba: utils.get_color_from_hex('#406D96')
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            
-            MDIconButton:
-                icon: "arrow-left"
-                pos_hint: {"center_y": 0.5}
-                theme_text_color: "Custom"
-                text_color: 1, 1, 1, 1
-                on_release: app.root.current = 'medical_home'
-            
-            MDLabel:
-                text: "My Profile"
-                halign: "center"
-                theme_text_color: "Custom"
-                text_color: 1, 1, 1, 1
-                font_style: "H6"
-            
-            MDIconButton:
-                icon: "lock-reset" if not root.is_editing else "content-save"
-                pos_hint: {"center_y": 0.5}
-                theme_text_color: "Custom"
-                text_color: 1, 1, 1, 1
-                on_release: root.change_password() if not root.is_editing else root.save_profile()
+        Header:
         
         # Profile content
         ScrollView:
@@ -608,7 +580,7 @@
                     text: "Logout"
                     pos_hint: {"center_x": 0.5}
                     md_bg_color: utils.get_color_from_hex('#F44336')
-                    on_release: app.root.current = 'login'
+                    on_release: app.root.switch_screen("login")
                 
                 # Add some padding at the bottom
                 Widget:

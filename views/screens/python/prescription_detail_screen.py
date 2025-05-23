@@ -16,7 +16,6 @@ from kivy.core.image import Image as CoreImage
 from kivy.utils import platform
 from kivy.logger import Logger
 
-Builder.load_file('views/screens/kv/prescription_detail_screen.kv')
 
 class PrescriptionMedicineCard(MDCard):
     medicine_name = StringProperty("")

@@ -26,7 +26,7 @@
                 pos_hint: {"center_y": 0.5}
                 theme_text_color: "Custom"
                 text_color: 1, 1, 1, 1
-                on_release: app.root.current = 'medical_home'
+                on_release: app.root.switch_screen("medical_home")
             
             MDLabel:
                 text: "Settings"

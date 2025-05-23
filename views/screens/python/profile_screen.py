@@ -1,5 +1,4 @@
 from kivy.uix.screenmanager import Screen
-from kivy.lang import Builder
 from kivy.properties import ObjectProperty, StringProperty, BooleanProperty, NumericProperty, ListProperty
 from kivy.clock import Clock
 from kivymd.uix.dialog import MDDialog
@@ -18,8 +17,6 @@ from kivymd.uix.boxlayout import MDBoxLayout
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Load KV file
-Builder.load_file('views/screens/kv/profile_screen.kv')
 
 class HealthConditionChip(MDBoxLayout):
     condition = StringProperty("")

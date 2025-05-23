@@ -19,12 +19,15 @@ from views.screens.python.prescription_detail_screen import PrescriptionDetailSc
 from views.screens.python.scan_screen import ScanScreen
 from views.screens.python.settings_screen import SettingsScreen
 from views.screens.python.profile_screen import ProfileScreen
+from views.screens.python.root_screen import RootWidget
 from kivymd.app import MDApp
+from kivy.lang import Builder
 from services.database_service import DatabaseService
 from controllers.db_controller import DatabaseController
 
 class MedicalApp(MDApp):
     def build(self):
+        self.load_all_kv_files()
         # Force recreate database (remove this in production)
         if os.path.exists('medical.db'):
             os.remove('medical.db')
@@ -37,19 +40,33 @@ class MedicalApp(MDApp):
         # Also initialize the controller
         self.db_controller = DatabaseController('app.db')
         self.db_controller.create_tables()
+
+        root = RootWidget()
+        return root
+    
+    def load_all_kv_files(self):
+        kv_dir = os.path.join(os.path.dirname(__file__), "views", "screens", "kv")
         
-        sm = ScreenManager(transition=SlideTransition())
-        sm.add_widget(LoginScreen(name='login'))
-        sm.add_widget(SignupScreen(name='signup'))
-        sm.add_widget(VerificationScreen(name='verify'))
-        sm.add_widget(ResetPasswordScreen(name='reset_password'))
-        sm.add_widget(HomeScreen(name='medical_home'))
-        sm.add_widget(HistoryScreen(name='history'))
-        sm.add_widget(PrescriptionDetailScreen(name='prescription_detail'))
-        sm.add_widget(ScanScreen(name='scan'))
-        sm.add_widget(SettingsScreen(name='settings'))
-        sm.add_widget(ProfileScreen(name='profile'))
-        return sm
+        kv_files = [
+            "root_screen.kv",
+            "login_screen.kv",
+            "signup_screen.kv",
+            "verification_screen.kv",
+            "reset_password_screen.kv",
+            "home_screen.kv",
+            "history_screen.kv",
+            "prescription_detail_screen.kv",
+            "scan_screen.kv",
+            "settings_screen.kv",
+            "profile_screen.kv"
+        ]
+
+        for kv_file in kv_files:
+            kv_path = os.path.join(kv_dir, kv_file)
+            if os.path.exists(kv_path):
+                Builder.load_file(kv_path)
+            else:
+                print(f"❌ KV file not found: {kv_path}")
 
     def on_stop(self):
         # Close database connections

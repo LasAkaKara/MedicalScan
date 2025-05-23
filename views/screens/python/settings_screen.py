@@ -1,5 +1,4 @@
 from kivy.uix.screenmanager import Screen
-from kivy.lang import Builder
 from kivy.properties import ObjectProperty, BooleanProperty, StringProperty, NumericProperty
 from kivy.clock import Clock
 from kivymd.uix.snackbar import Snackbar
@@ -13,8 +12,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Load the KV file
-Builder.load_file('views/screens/kv/settings_screen.kv')
 
 class SettingsScreen(Screen):
     # Camera settings
