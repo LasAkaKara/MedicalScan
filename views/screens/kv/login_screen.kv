@@ -20,11 +20,8 @@
                     source: "assets/login-bg.jpg"
             orientation: 'vertical'
             padding: [dp(10), dp(60)]
-            spacing: dp(15)
+            spacing: dp(20)
         
-            Widget:
-                size_hint_y: 0.15
-
             HeaderLabel:
                 text: 'MediScan'
                 font_size: sp(32)
@@ -49,7 +46,7 @@
                     size: self.size
             orientation: 'vertical'
             padding: [dp(0), dp(10)]
-            spacing: dp(10)
+            spacing: dp(8)
             opacity: 0
             on_parent: Animation(opacity=1, duration=0.5).start(self)
 
@@ -121,7 +118,7 @@
                 pos_hint: {'center_x': 0.5}
                 opacity: 0
                 on_parent: Animation(opacity=1, duration=0.5).start(self)
-                on_press: root.manager.current = 'signup' 
+                on_press: app.root.switch_screen("signup") 
 
 
         

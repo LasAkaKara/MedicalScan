@@ -2,39 +2,64 @@
     email: email
     password: password
     confirm_password: confirm_password
-    BoxLayout:
-        orientation: 'vertical'
-        padding: dp(20)
-        spacing: dp(20)
-        canvas.before:
-            Color:
-                rgba: 1, 1, 1, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
 
-        Widget:
-            size_hint_y: 0.1
+    GridLayout:
+        cols: 1
+        rows: 2
+        BoxLayout:
+            size_hint_y: None
+            height: 260
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex(PRIMARY_COLOR)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+                    source: "assets/login-bg.jpg"
+            orientation: 'vertical'
+            padding: [dp(10), dp(60)]
+            spacing: dp(20)
 
-        HeaderLabel:
-            text: 'Đăng Ký Tài Khoản'
-            font_size: sp(28)
-            opacity: 0
-            on_parent: Animation(opacity=1, duration=0.5).start(self)
+            HeaderLabel:
+                text: 'MediScan'
+                font_size: sp(32)
+                color: utils.get_color_from_hex(BACKGROUND_COLOR)
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
 
-        Widget:
-            size_hint_y: 0.05
+            SubtitleLabel:
+                text: 'Hiểu Rõ Mọi Thành Phần\nNhắc Nhở Theo Dõi Sức Khỏe'
+                halign: 'center'
+                color: utils.get_color_from_hex(BACKGROUND_COLOR)
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
+
 
         BoxLayout:
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex("#f9fafc")
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
             orientation: 'vertical'
-            spacing: dp(15)
+            padding: [dp(0), dp(10)]
+            spacing: dp(10)
             opacity: 0
             on_parent: Animation(opacity=1, duration=0.5).start(self)
+
+            FormLabel:
+                text: "Đăng ký tài khoản"
+                halign: "center"
+                size_hint_y: None
+                height: self.texture_size[1]
 
             CustomTextInput:
                 id: email
                 hint_text: 'Email'
+                md_bg_color: utils.get_color_from_hex(HINT_COLOR)
                 pos_hint: {'center_x': 0.5}
+                icon_left: "account"
 
             PasswordField:
                 id: password
@@ -61,12 +86,13 @@
                 opacity: 0.5 if root.is_submitting or root.is_checking_email else 1
                 on_press: root.register()
 
-        Widget:
-            size_hint_y: 0.1
+            Widget:
+                size_hint_y: None
+                height: dp(15)
 
-        TextButton:
-            text: 'Đã có tài khoản? Đăng nhập'
-            pos_hint: {'center_x': 0.5}
-            opacity: 0
-            on_parent: Animation(opacity=1, duration=0.5).start(self)
-            on_press: root.manager.current = 'login' 
+            TextButton:
+                text: 'Đã có tài khoản? Đăng nhập'
+                pos_hint: {'center_x': 0.5}
+                opacity: 0
+                on_parent: Animation(opacity=1, duration=0.5).start(self)
+                on_press: app.root.switch_screen("login")
