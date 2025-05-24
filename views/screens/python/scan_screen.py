@@ -11,7 +11,8 @@ from kivy.graphics import Color, Line, InstructionGroup
 from kivy.uix.scatter import Scatter
 from kivymd.uix.button import MDFloatingActionButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.snackbar import Snackbar
+from kivymd.uix.snackbar import MDSnackbar
+from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
 from kivy.metrics import dp
 import cv2
@@ -417,8 +418,8 @@ class ScanScreen(Screen):
         self.is_processing = False
         
         # Show cropping instructions
-        Snackbar(
-            text="Drag the corner markers to adjust the crop area",
+        MDSnackbar(
+            MDLabel(text="Drag the corner markers to adjust the crop area"),
             duration=3
         ).open()
         
@@ -513,8 +514,8 @@ class ScanScreen(Screen):
                 Clock.schedule_once(lambda dt: self._update_crop_points([(0, 0), (w, 0), (w, h), (0, h)]), 0)
                 
                 # Show message that no document was detected
-                Clock.schedule_once(lambda dt: Snackbar(
-                    text="No document detected. Please adjust corners manually.",
+                Clock.schedule_once(lambda dt: MDSnackbar(
+                    MDLabel(text="No document detected. Please adjust corners manually."),
                     duration=3
                 ).open(), 0.5)
         except Exception as e:
@@ -625,8 +626,8 @@ class ScanScreen(Screen):
             cv2.imwrite(filepath, enhanced_image)
             
             # Show success message on main thread
-            Clock.schedule_once(lambda dt: Snackbar(
-                text=f"Saved to {filepath}",
+            Clock.schedule_once(lambda dt: MDSnackbar(
+                MDLabel(text=f"Saved to {filepath}"),
                 duration=3
             ).open(), 0)
             
