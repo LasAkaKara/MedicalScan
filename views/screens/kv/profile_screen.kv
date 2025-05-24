@@ -186,14 +186,8 @@
 <ProfileScreen>:
     BoxLayout:
         orientation: 'vertical'
-        canvas.before:
-            Color:
-                rgba: utils.get_color_from_hex('#F5F5F5')
-            Rectangle:
-                pos: self.pos
-                size: self.size
         
-        # Header with back button
+        # Header
         Header:
         
         # Profile content
@@ -212,17 +206,17 @@
                 MDCard:
                     orientation: 'vertical'
                     padding: dp(20)
-                    spacing: dp(16)
                     size_hint_y: None
-                    height: dp(200)
+                    height: dp(180)
                     md_bg_color: 1, 1, 1, 1
                     radius: [15]
                     elevation: 2
                     
                     BoxLayout:
                         orientation: 'horizontal'
-                        size_hint_y: None
-                        height: dp(100)
+                        height: dp(120)
+                        size_hint_y: 0.5
+                        spacing: dp(28)
                         
                         BoxLayout:
                             orientation: 'vertical'
@@ -240,11 +234,9 @@
                                     Ellipse:
                                         pos: self.pos
                                         size: self.size
-                        
                         BoxLayout:
                             orientation: 'vertical'
                             size_hint_x: 0.7
-                            spacing: dp(8)
                             
                             MDLabel:
                                 text: root.full_name if root.full_name else "User"
@@ -255,6 +247,18 @@
                                 text: root.email if root.email else "Not provided"
                                 font_style: "Body2"
                                 theme_text_color: "Secondary"
+                        
+                    
+                    BoxLayout:
+                        orientation: "horizontal"
+                        size_hint_y: 0.5
+                        spacing: dp(20)
+                        MDRaisedButton:
+                            text: "Edit profile"
+
+                        MDRaisedButton:
+                            text: "Change your password"
+                            on_release: root.change_password()
                 
                 # Health Stats Section
                 MDCard:
@@ -297,15 +301,12 @@
                         height: dp(60)
                         padding: dp(16)
                         spacing: dp(16)
-                        md_bg_color: utils.get_color_from_hex('#FFF3E0')
                         radius: [10]
                         
                         MDIcon:
                             icon: 'calendar-clock'
                             size_hint: None, None
                             size: dp(28), dp(28)
-                            theme_text_color: "Custom"
-                            text_color: utils.get_color_from_hex('#FF9800')
                             pos_hint: {'center_y': 0.5}
                         
                         BoxLayout:
@@ -537,43 +538,6 @@
                             MDRaisedButton:
                                 text: "Save"
                                 on_release: root.save_profile()
-                
-                # App Settings Section
-                MDCard:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    size_hint_y: None
-                    height: self.minimum_height
-                    md_bg_color: 1, 1, 1, 1
-                    radius: [15]
-                    elevation: 2
-                    
-                    MDLabel:
-                        text: "App Settings"
-                        font_style: "H6"
-                        size_hint_y: None
-                        height: dp(40)
-                    
-                    OneLineIconListItem:
-                        text: "Scanning History"
-                        on_release: app.root.current = 'history'
-                        
-                        IconLeftWidget:
-                            icon: "history"
-                    
-                    OneLineIconListItem:
-                        text: "App Settings"
-                        on_release: app.root.current = 'settings'
-                        
-                        IconLeftWidget:
-                            icon: "cog"
-                    
-                    OneLineIconListItem:
-                        text: "Dark Mode"
-                        on_release: app.toggle_theme()
-                        
-                        IconLeftWidget:
-                            icon: "theme-light-dark"
                 
                 # Logout button at the bottom
                 MDRaisedButton:

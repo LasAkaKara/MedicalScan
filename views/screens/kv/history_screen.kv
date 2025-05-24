@@ -361,92 +361,84 @@
 <HistoryScreen>:
     BoxLayout:
         orientation: 'vertical'
-        canvas.before:
-            Color:
-                rgba: utils.get_color_from_hex('#F9FAFB')
-            Rectangle:
-                pos: self.pos
-                size: self.size
 
         # Header
-        BoxLayout:
-            size_hint_y: None
-            height: dp(140)
-            padding: [dp(20), dp(20)]
-            spacing: dp(12)
-            canvas.before:
-                Color:
-                    rgba: utils.get_color_from_hex('#FFFFFF')
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-                Color:
-                    rgba: utils.get_color_from_hex('#F5F8FF')
-                Rectangle:
-                    pos: self.pos[0], self.pos[1]
-                    size: self.width, dp(4)
+        Header:
+        # BoxLayout:
+        #     size_hint_y: None
+        #     height: dp(140)
+        #     padding: [dp(20), dp(20)]
+        #     spacing: dp(12)
+        #     canvas.before:
+        #         Color:
+        #             rgba: utils.get_color_from_hex('#FFFFFF')
+        #         Rectangle:
+        #             pos: self.pos
+        #             size: self.size
+        #         Color:
+        #             rgba: utils.get_color_from_hex('#F5F8FF')
+        #         Rectangle:
+        #             pos: self.pos[0], self.pos[1]
+        #             size: self.width, dp(4)
 
-            MDIconButton:
-                icon: 'arrow-left'
-                size_hint: None, None
-                size: dp(48), dp(48)
-                pos_hint: {'center_y': 0.5}
-                theme_text_color: "Custom"
-                text_color: utils.get_color_from_hex('#406D96')
-                md_bg_color: utils.get_color_from_hex('#F1F9FF')
-                on_release: app.root.current = 'medical_home'
+        #     MDIconButton:
+        #         icon: 'arrow-left'
+        #         size_hint: None, None
+        #         size: dp(48), dp(48)
+        #         pos_hint: {'center_y': 0.5}
+        #         theme_text_color: "Custom"
+        #         text_color: utils.get_color_from_hex('#406D96')
+        #         md_bg_color: utils.get_color_from_hex('#F1F9FF')
+        #         on_release: app.root.switch_screen("medical_home")
 
-            BoxLayout:
-                orientation: 'vertical'
-                spacing: dp(6)
-                padding: [0, dp(12)]
+        #     BoxLayout:
+        #         orientation: 'vertical'
+        #         spacing: dp(6)
+        #         padding: [0, dp(12)]
 
-                MDLabel:
-                    text: 'Đơn thuốc'
-                    font_size: sp(38)
-                    font_name: 'Roboto'
-                    bold: True
-                    color: utils.get_color_from_hex('#002D40')
+        #         MDLabel:
+        #             text: 'Đơn thuốc'
+        #             font_size: sp(38)
+        #             font_name: 'Roboto'
+        #             bold: True
+        #             color: utils.get_color_from_hex('#002D40')
 
-                MDLabel:
-                    text: 'Quản lý các đơn thuốc của bạn tại đây'
-                    font_size: sp(16)
-                    font_name: 'Roboto'
-                    color: utils.get_color_from_hex('#667085')
+        #         MDLabel:
+        #             text: 'Quản lý các đơn thuốc của bạn tại đây'
+        #             font_size: sp(16)
+        #             font_name: 'Roboto'
+        #             color: utils.get_color_from_hex('#667085')
 
-            MDIconButton:
-                icon: 'bell'
-                size_hint: None, None
-                size: dp(52), dp(52)
-                md_bg_color: utils.get_color_from_hex('#F1F9FF')
-                theme_text_color: "Custom"
-                text_color: utils.get_color_from_hex('#406D96')
-                pos_hint: {'center_y': 0.5}
+        #     MDIconButton:
+        #         icon: 'bell'
+        #         size_hint: None, None
+        #         size: dp(52), dp(52)
+        #         md_bg_color: utils.get_color_from_hex('#F1F9FF')
+        #         theme_text_color: "Custom"
+        #         text_color: utils.get_color_from_hex('#406D96')
+        #         pos_hint: {'center_y': 0.5}
 
         # Search Box
         BoxLayout:
             size_hint_y: None
             height: dp(80)
             padding: [dp(16), dp(8)]
-            md_bg_color: utils.get_color_from_hex('#FFFFFF')
-            canvas.before:
-                Color:
-                    rgba: utils.get_color_from_hex('#FFFFFF')
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-                Color:
-                    rgba: utils.get_color_from_hex('#F0F0F0')
-                Rectangle:
-                    pos: self.pos[0], self.pos[1] + self.height - dp(1)
-                    size: self.width, dp(1)
+            # canvas.before:
+            #     Color:
+            #         rgba: utils.get_color_from_hex('#FFFFFF')
+            #     Rectangle:
+            #         pos: self.pos
+            #         size: self.size
+            #     Color:
+            #         rgba: utils.get_color_from_hex('#F0F0F0')
+            #     Rectangle:
+            #         pos: self.pos[0], self.pos[1] + self.height - dp(1)
+            #         size: self.width, dp(1)
 
             MDCard:
-                md_bg_color: utils.get_color_from_hex('#F9FCFE')
                 radius: [20]
                 elevation: 0
                 padding: [dp(18), 0]
-                line_color: utils.get_color_from_hex('#E4E7EC')
 
                 BoxLayout:
                     spacing: dp(14)
@@ -456,14 +448,12 @@
                         icon: 'magnify'
                         size_hint: None, None
                         size: dp(28), dp(28)
-                        color: utils.get_color_from_hex('#667085')
                         pos_hint: {'center_y': 0.5}
 
                     TextInput:
                         id: search_input
                         hint_text: 'Tìm kiếm đơn thuốc...'
                         background_color: 0, 0, 0, 0
-                        cursor_color: utils.get_color_from_hex('#406D96')
                         font_size: sp(17)
                         font_name: 'Roboto'
                         multiline: False
@@ -480,24 +470,12 @@
             size_hint_y: None
             height: dp(60)
             padding: [dp(20), dp(12)]
-            canvas.before:
-                Color:
-                    rgba: utils.get_color_from_hex('#FFFFFF')
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-                Color:
-                    rgba: utils.get_color_from_hex('#F0F0F0')
-                Rectangle:
-                    pos: self.pos[0], self.pos[1] + self.height - dp(1)
-                    size: self.width, dp(1)
             
             MDLabel:
                 text: 'Tất cả đơn thuốc'
                 font_size: sp(22)
                 font_name: 'Roboto'
                 bold: True
-                color: utils.get_color_from_hex('#343838')
 
         # Prescriptions List
         ScrollView:
@@ -515,13 +493,14 @@
                 spacing: dp(24)
 
         # Add Button
-        MDFloatingActionButton:
-            icon: 'plus'
-            md_bg_color: utils.get_color_from_hex('#406D96')
-            text_color: utils.get_color_from_hex('#FFFFFF')
-            user_font_size: sp(24)
-            pos_hint: {'right': 0.95, 'y': 0.05}
-            size_hint: None, None
-            size: dp(64), dp(64)
-            elevation: 4
-            on_press: root.add_prescription()
+        FloatLayout:
+            size_hint_y: None
+            height: dp(80)
+            MDFloatingActionButton:
+                icon: 'plus'
+                user_font_size: sp(24)
+                size_hint: None, None
+                size: dp(64), dp(64)
+                elevation: 4
+                pos_hint: {'right': 0.96, 'y': 0.2}
+                on_press: root.add_prescription()

@@ -3,12 +3,6 @@
 <HomeScreen>:
     BoxLayout:
         orientation: 'vertical'
-        canvas.before:
-            Color:
-                rgba: utils.get_color_from_hex(CARD_COLOR)
-            Rectangle:
-                pos: self.pos
-                size: self.size
                 
         # Header with profile button
         Header:
@@ -39,7 +33,7 @@
                 pos_hint: {'center_x': 0.5}
                 opacity: 0
                 on_parent: Animation(opacity=1, duration=0.5).start(self)
-                on_press: app.root.current = 'scan'
+                on_press: app.root.switch_screen("scan")
 
             Widget:
                 size_hint_y: 0.3

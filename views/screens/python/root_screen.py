@@ -1,5 +1,6 @@
 from kivymd.uix.navigationdrawer import MDNavigationLayout
 from kivy.uix.screenmanager import FadeTransition, SlideTransition
+from kivymd.app import MDApp
 
 
 class RootWidget(MDNavigationLayout):
@@ -19,3 +20,8 @@ class RootWidget(MDNavigationLayout):
         nav_drawer = self.ids.nav_drawer
         if nav_drawer.state == "open":
             nav_drawer.set_state("close")
+
+    def toggle_theme(self):
+        app = MDApp.get_running_app()
+        current_theme = app.theme_cls.theme_style
+        app.theme_cls.theme_style = "Light" if current_theme == "Dark" else "Dark"

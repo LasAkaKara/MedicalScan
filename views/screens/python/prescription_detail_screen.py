@@ -1,5 +1,4 @@
 from kivy.uix.screenmanager import Screen
-from kivy.lang import Builder
 from kivy.properties import StringProperty, ListProperty, ObjectProperty, NumericProperty
 from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog

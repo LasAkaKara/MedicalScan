@@ -41,6 +41,9 @@ class MedicalApp(MDApp):
         self.db_controller = DatabaseController('app.db')
         self.db_controller.create_tables()
 
+        self.theme_cls.theme_style_switch_animation = True
+        self.theme_cls.theme_style = "Light"
+        self.theme_cls.primary_palette = "Blue"
         root = RootWidget()
         return root
     

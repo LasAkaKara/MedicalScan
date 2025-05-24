@@ -31,17 +31,32 @@
                 title: "Xin chào"
                 text: "User Name"
 
+            Widget:
+                size_hint_y: None
+                height: dp(10)
+
             MDNavigationDrawerItem:
                 icon: "home"
-                text: "Home"
+                text: "Trang chủ"
                 on_press: root.switch_screen("medical_home")
 
             MDNavigationDrawerItem:
                 icon: "cog"
-                text: "Settings"
+                text: "Cài đặt"
                 on_press: root.switch_screen("settings")
 
             MDNavigationDrawerItem:
+                icon: "history"
+                text: "Lịch sử"
+                on_press: root.switch_screen("history")
+
+            MDNavigationDrawerItem:
+                icon: "theme-light-dark"
+                text: "Light/Dark Mode"
+                on_press: root.toggle_theme()
+
+            MDNavigationDrawerItem:
+                text_color: utils.get_color_from_hex(ERROR_COLOR)
                 icon: "exit-to-app"
                 text: "Đăng xuất"
                 on_press: root.switch_screen("login")

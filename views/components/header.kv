@@ -1,19 +1,22 @@
 # Header with profile button
 <Header@BoxLayout>:
-    size_hint_y: 0.08
+    size_hint_y: None
+    height: dp(56)
+    pos_hint: {"top": 1}
+    z: 10
     padding: dp(10)
-    
+
     MDIconButton:
         icon: "menu"
         size_hint_x: 0.1
         on_release: app.root.toggle_nav_drawer()
-    
+
     HeaderLabel:
         text: 'MediScan'
         font_size: sp(20)
         size_hint_x: 0.8
         halign: 'center'
-    
+
     MDIconButton:
         icon: "account-circle"
         theme_text_color: "Primary"

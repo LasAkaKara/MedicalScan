@@ -4,39 +4,34 @@
 <SettingsScreen>:
     BoxLayout:
         orientation: 'vertical'
-        canvas.before:
-            Color:
-                rgba: utils.get_color_from_hex('#F5F5F5')
-            Rectangle:
-                pos: self.pos
-                size: self.size
         
         # Header with back button
-        BoxLayout:
-            size_hint: 1, 0.08
-            canvas.before:
-                Color:
-                    rgba: utils.get_color_from_hex('#2196F3')
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+        Header:
+        # BoxLayout:
+        #     size_hint: 1, 0.08
+        #     canvas.before:
+        #         Color:
+        #             rgba: utils.get_color_from_hex('#2196F3')
+        #         Rectangle:
+        #             pos: self.pos
+        #             size: self.size
             
-            MDIconButton:
-                icon: "arrow-left"
-                pos_hint: {"center_y": 0.5}
-                theme_text_color: "Custom"
-                text_color: 1, 1, 1, 1
-                on_release: app.root.switch_screen("medical_home")
+        #     MDIconButton:
+        #         icon: "arrow-left"
+        #         pos_hint: {"center_y": 0.5}
+        #         theme_text_color: "Custom"
+        #         text_color: 1, 1, 1, 1
+        #         on_release: app.root.switch_screen("medical_home")
             
-            MDLabel:
-                text: "Settings"
-                halign: "center"
-                theme_text_color: "Custom"
-                text_color: 1, 1, 1, 1
-                font_style: "H6"
+        #     MDLabel:
+        #         text: "Settings"
+        #         halign: "center"
+        #         theme_text_color: "Custom"
+        #         text_color: 1, 1, 1, 1
+        #         font_style: "H6"
             
-            Widget:
-                size_hint_x: 0.1
+        #     Widget:
+        #         size_hint_x: 0.1
         
         # Settings content in a scroll view
         ScrollView:
@@ -72,7 +67,9 @@
                             text: "Flip Camera Horizontally"
                             theme_text_color: "Primary"
                         
-                        MDSwitch:
+                        
+                        Switch:
+                            text: "Test"
                             active: root.camera_flip_horizontal
                             on_active: root.toggle_camera_flip_horizontal()
                     
@@ -85,7 +82,7 @@
                             text: "Flip Camera Vertically"
                             theme_text_color: "Primary"
                         
-                        MDSwitch:
+                        Switch:
                             active: root.camera_flip_vertical
                             on_active: root.toggle_camera_flip_vertical()
                     
@@ -153,7 +150,7 @@
                             text: "Auto-detect Documents"
                             theme_text_color: "Primary"
                         
-                        MDSwitch:
+                        Switch:
                             active: root.auto_detect_documents
                             on_active: root.toggle_auto_detect_documents()
                     
@@ -167,7 +164,7 @@
                             text: "Save Original Images"
                             theme_text_color: "Primary"
                         
-                        MDSwitch:
+                        Switch:
                             active: root.save_original_images
                             on_active: root.toggle_save_original_images()
                 
