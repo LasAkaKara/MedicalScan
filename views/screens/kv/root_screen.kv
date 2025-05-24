@@ -27,6 +27,7 @@
         id: nav_drawer
         radius: 0, dp(16), dp(16), 0
         MDNavigationDrawerMenu:
+            id: nav_menu
             MDNavigationDrawerHeader:
                 title: "Xin chào"
                 text: "User Name"
@@ -38,25 +39,24 @@
             MDNavigationDrawerItem:
                 icon: "home"
                 text: "Trang chủ"
+                theme_text_color: "Primary"
                 on_press: root.switch_screen("medical_home")
-
-            MDNavigationDrawerItem:
-                icon: "cog"
-                text: "Cài đặt"
-                on_press: root.switch_screen("settings")
 
             MDNavigationDrawerItem:
                 icon: "history"
                 text: "Lịch sử"
+                theme_text_color: "Primary"
                 on_press: root.switch_screen("history")
 
             MDNavigationDrawerItem:
-                icon: "theme-light-dark"
-                text: "Light/Dark Mode"
-                on_press: root.toggle_theme()
+                icon: "cog"
+                text: "Cài đặt"
+                theme_text_color: "Primary"
+                on_press: root.switch_screen("settings")
 
             MDNavigationDrawerItem:
-                text_color: utils.get_color_from_hex(ERROR_COLOR)
                 icon: "exit-to-app"
                 text: "Đăng xuất"
+                icon_color: utils.get_color_from_hex(ERROR_COLOR)
+                text_color: utils.get_color_from_hex(ERROR_COLOR)
                 on_press: root.switch_screen("login")

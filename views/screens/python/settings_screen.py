@@ -1,7 +1,8 @@
 from kivy.uix.screenmanager import Screen
 from kivy.properties import ObjectProperty, BooleanProperty, StringProperty, NumericProperty
 from kivy.clock import Clock
-from kivymd.uix.snackbar import Snackbar
+from kivymd.uix.snackbar import MDSnackbar
+from kivymd.uix.label import MDLabel
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDRaisedButton
 import os
@@ -89,7 +90,10 @@ class SettingsScreen(Screen):
                 json.dump(settings, f, indent=4)
             
             logger.debug("Settings saved successfully")
-            Snackbar(text="Settings saved", duration=1).open()
+            MDSnackbar(
+                MDLabel(text="Settings saved"),
+                duration=1
+            ).open()
         except Exception as e:
             logger.error(f"Error saving settings: {e}")
             self.show_error_dialog("Save Error", f"Failed to save settings: {str(e)}")
@@ -99,24 +103,26 @@ class SettingsScreen(Screen):
         self.camera_flip_horizontal = not self.camera_flip_horizontal
         self.save_settings()
         # Show feedback to the user
-        Snackbar(text="Horizontal flip " + ("enabled" if self.camera_flip_horizontal else "disabled"), duration=1).open()
+        MDSnackbar(MDLabel(text="Horizontal flip " + ("enabled" if self.camera_flip_horizontal else "disabled")), duration=1).open()
     
     def toggle_camera_flip_vertical(self):
         """Toggle vertical camera flip"""
         self.camera_flip_vertical = not self.camera_flip_vertical
         self.save_settings()
         # Show feedback to the user
-        Snackbar(text="Vertical flip " + ("enabled" if self.camera_flip_vertical else "disabled"), duration=1).open()
+        MDSnackbar(
+            MDLabel(text="Vertical flip " + ("enabled" if self.camera_flip_vertical else "disabled")), 
+            duration=1).open()
     
     def set_camera_resolution(self, resolution):
         """Set camera resolution"""
         if resolution != self.camera_resolution:
             self.camera_resolution = resolution
             self.save_settings()
-            Snackbar(text=f"Camera resolution set to {resolution}", duration=1).open()
+            MDSnackbar(MDLabel(text=f"Camera resolution set to {resolution}"), duration=1).open()
             # Inform the user they need to restart the camera
-            Clock.schedule_once(lambda dt: Snackbar(
-                text="Please restart camera to apply new resolution", 
+            Clock.schedule_once(lambda dt: MDSnackbar(
+                MDLabel(text="Please restart camera to apply new resolution"), 
                 duration=2
             ).open(), 1.5)
     

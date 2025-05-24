@@ -39,7 +39,7 @@
                 theme_text_color: "Custom"
                 text_color: utils.get_color_from_hex('#406D96')
                 md_bg_color: utils.get_color_from_hex('#F1F9FF')
-                on_release: app.root.current = 'medical_home'
+                on_release: app.root.switch_screen("medical_home")
             
             BoxLayout:
                 orientation: 'vertical'

@@ -1,4 +1,4 @@
-from kivymd.uix.navigationdrawer import MDNavigationLayout
+from kivymd.uix.navigationdrawer import MDNavigationLayout, MDNavigationDrawerItem
 from kivy.uix.screenmanager import FadeTransition, SlideTransition
 from kivymd.app import MDApp
 
@@ -20,6 +20,11 @@ class RootWidget(MDNavigationLayout):
         nav_drawer = self.ids.nav_drawer
         if nav_drawer.state == "open":
             nav_drawer.set_state("close")
+
+        # If logging out to the login screen, set theme to Light
+        if screen_name == "login":
+            app = MDApp.get_running_app()
+            app.theme_cls.theme_style = "Light"
 
     def toggle_theme(self):
         app = MDApp.get_running_app()
