@@ -168,7 +168,25 @@ class ProfileScreen(Screen):
     
     def toggle_edit_mode(self):
         """Toggle between view and edit mode"""
-        self.is_editing = not self.is_editing
+        self.dialog = MDDialog(
+            type="custom",
+            content_cls=EditProfileDialog(
+                email=self.email,
+                full_name=self.full_name,
+                phone=self.phone
+            ),
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL",
+                    on_release=lambda x: self.dialog.dismiss()
+                ),
+                MDRaisedButton(
+                    text="SAVE",
+                    on_release=self.save_profile
+                ),
+            ],
+        )
+        self.dialog.open()
     
     def save_profile(self):
         """Save updated profile information"""
@@ -306,7 +324,8 @@ class ProfileScreen(Screen):
         for condition in self.health_conditions:
             chip = HealthConditionChip(
                 condition=condition,
-                callback=lambda c=condition: self.remove_health_condition(c)
+                callback=lambda c=condition: self.remove_health_condition(c),
+                size_hint_x=None
             )
             container.add_widget(chip)
     
@@ -338,22 +357,21 @@ class ProfileScreen(Screen):
     
     def change_password(self):
         """Show change password dialog"""
-        if not self.dialog:
-            self.dialog = MDDialog(
-                title="Change Password",
-                type="custom",
-                content_cls=PasswordChangeDialog(),
-                buttons=[
-                    MDFlatButton(
-                        text="CANCEL",
-                        on_release=lambda x: self.dialog.dismiss()
-                    ),
-                    MDRaisedButton(
-                        text="CHANGE",
-                        on_release=self.do_change_password
-                    ),
-                ],
-            )
+        self.dialog = MDDialog(
+            title="Change Password",
+            type="custom",
+            content_cls=PasswordChangeDialog(),
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL",
+                    on_release=lambda x: self.dialog.dismiss()
+                ),
+                MDRaisedButton(
+                    text="CHANGE",
+                    on_release=self.do_change_password
+                ),
+            ],
+        )
         self.dialog.open()
     
     def do_change_password(self, *args):
@@ -419,6 +437,14 @@ class PasswordChangeDialog(Screen):
     new_password_error = StringProperty("")
     confirm_password_error = StringProperty("")
 
+class EditProfileDialog(Screen):
+    email = StringProperty("")
+    full_name = StringProperty("")
+    phone = StringProperty("")
+
+    email_error = StringProperty("")
+    full_name_error = StringProperty("")
+    phone_error = StringProperty("")
 class HealthConditionDialog(Screen):
     condition = StringProperty("")
     condition_error = StringProperty("")

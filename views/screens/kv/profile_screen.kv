@@ -3,7 +3,7 @@
 
 <PasswordChangeDialog>:
     size_hint_y: None
-    height: "280dp"
+    height: "260dp"
     
     BoxLayout:
         orientation: "vertical"
@@ -43,6 +43,47 @@
             error: True if root.confirm_password_error else False
             size_hint_y: None
             height: self.minimum_height
+
+<EditProfileDialog>:
+    size_hint_y: None
+    height: "260dp"
+
+    BoxLayout:
+        orientation: "vertical"
+        size_hint_y: None
+        height: self.minimum_height
+        spacing: dp(16)
+        
+        MDLabel:
+            text: "Edit Personal Information"
+            font_style: "H6"
+            size_hint_y: None
+            height: dp(40)
+        
+        MDTextField:
+            id: email_field
+            hint_text: "Email"
+            text: root.email
+            size_hint_y: None
+            height: dp(48)
+            helper_text: "example@email.com"
+            helper_text_mode: "on_focus"
+        
+        MDTextField:
+            id: full_name_field
+            hint_text: "Full Name"
+            text: root.full_name
+            size_hint_y: None
+            height: dp(48)
+        
+        MDTextField:
+            id: phone_field
+            hint_text: "Phone"
+            text: root.phone
+            size_hint_y: None
+            height: dp(48)
+            helper_text: "10-15 digits, optionally with + prefix"
+            helper_text_mode: "on_focus"
 
 <HealthConditionDialog>:
     size_hint_y: None
@@ -255,6 +296,7 @@
                         spacing: dp(20)
                         MDRaisedButton:
                             text: "Edit profile"
+                            on_release: root.toggle_edit_mode()
 
                         MDRaisedButton:
                             text: "Change your password"
@@ -371,10 +413,10 @@
                 # Notification Preferences
                 MDCard:
                     orientation: "vertical"
-                    padding: dp(16)
                     size_hint_y: None
                     height: self.minimum_height
                     md_bg_color: 1, 1, 1, 1
+                    padding: [22, 0, 30, 0]
                     radius: [15]
                     elevation: 2
                     
@@ -404,140 +446,6 @@
                         subtitle: 'Get notified about upcoming appointments'
                         active: root.notify_appointments
                         callback: lambda x: root.toggle_notification('appointments')
-                
-                # Personal Information Section
-                MDCard:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    size_hint_y: None
-                    height: self.minimum_height
-                    md_bg_color: 1, 1, 1, 1
-                    radius: [15]
-                    elevation: 2
-                    
-                    # View mode
-                    BoxLayout:
-                        orientation: "vertical"
-                        size_hint_y: None
-                        height: self.minimum_height
-                        spacing: dp(16)
-                        opacity: 0 if root.is_editing else 1
-                        disabled: root.is_editing
-                        
-                        MDLabel:
-                            text: "Personal Information"
-                            font_style: "H6"
-                            size_hint_y: None
-                            height: dp(40)
-                        
-                        BoxLayout:
-                            orientation: "vertical"
-                            size_hint_y: None
-                            height: self.minimum_height
-                            
-                            MDLabel:
-                                text: "Email"
-                                font_style: "Caption"
-                                theme_text_color: "Secondary"
-                                size_hint_y: None
-                                height: dp(20)
-                            
-                            MDLabel:
-                                text: root.email if root.email else "Not provided"
-                                size_hint_y: None
-                                height: dp(30)
-                        
-                        BoxLayout:
-                            orientation: "vertical"
-                            size_hint_y: None
-                            height: self.minimum_height
-                            
-                            MDLabel:
-                                text: "Full Name"
-                                font_style: "Caption"
-                                theme_text_color: "Secondary"
-                                size_hint_y: None
-                                height: dp(20)
-                            
-                            MDLabel:
-                                text: root.full_name if root.full_name else "Not provided"
-                                size_hint_y: None
-                                height: dp(30)
-                        
-                        BoxLayout:
-                            orientation: "vertical"
-                            size_hint_y: None
-                            height: self.minimum_height
-                            
-                            MDLabel:
-                                text: "Phone"
-                                font_style: "Caption"
-                                theme_text_color: "Secondary"
-                                size_hint_y: None
-                                height: dp(20)
-                            
-                            MDLabel:
-                                text: root.phone if root.phone else "Not provided"
-                                size_hint_y: None
-                                height: dp(30)
-                        
-                        MDRaisedButton:
-                            text: "Edit Profile"
-                            pos_hint: {"center_x": 0.5}
-                            on_release: root.toggle_edit_mode()
-                    
-                    # Edit mode
-                    BoxLayout:
-                        orientation: "vertical"
-                        size_hint_y: None
-                        height: self.minimum_height
-                        spacing: dp(16)
-                        opacity: 1 if root.is_editing else 0
-                        disabled: not root.is_editing
-                        
-                        MDLabel:
-                            text: "Edit Personal Information"
-                            font_style: "H6"
-                            size_hint_y: None
-                            height: dp(40)
-                        
-                        MDTextField:
-                            id: email_field
-                            hint_text: "Email"
-                            text: root.email
-                            size_hint_y: None
-                            height: dp(48)
-                            helper_text: "example@email.com"
-                            helper_text_mode: "on_focus"
-                        
-                        MDTextField:
-                            id: full_name_field
-                            hint_text: "Full Name"
-                            text: root.full_name
-                            size_hint_y: None
-                            height: dp(48)
-                        
-                        MDTextField:
-                            id: phone_field
-                            hint_text: "Phone"
-                            text: root.phone
-                            size_hint_y: None
-                            height: dp(48)
-                            helper_text: "10-15 digits, optionally with + prefix"
-                            helper_text_mode: "on_focus"
-                        
-                        BoxLayout:
-                            size_hint_y: None
-                            height: dp(48)
-                            spacing: dp(10)
-                            
-                            MDFlatButton:
-                                text: "Cancel"
-                                on_release: root.toggle_edit_mode()
-                            
-                            MDRaisedButton:
-                                text: "Save"
-                                on_release: root.save_profile()
                 
                 # Logout button at the bottom
                 MDRaisedButton:
