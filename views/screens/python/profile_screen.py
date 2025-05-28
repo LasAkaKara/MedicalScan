@@ -116,7 +116,7 @@ class ProfileScreen(Screen):
         """Load user statistics"""
         try:
             db = DatabaseService()
-            user_id = 3  # This should come from a session or app state
+            user_id = 2  # This should come from a session or app state
             
             # Get prescription count
             conn = db.connect()
@@ -170,11 +170,7 @@ class ProfileScreen(Screen):
         """Toggle between view and edit mode"""
         self.dialog = MDDialog(
             type="custom",
-            content_cls=EditProfileDialog(
-                email=self.email,
-                full_name=self.full_name,
-                phone=self.phone
-            ),
+            content_cls=EditProfileDialog(),
             buttons=[
                 MDFlatButton(
                     text="CANCEL",
@@ -266,22 +262,21 @@ class ProfileScreen(Screen):
     
     def add_health_condition(self):
         """Show dialog to add a health condition"""
-        if not self.dialog:
-            self.dialog = MDDialog(
-                title="Add Health Condition",
-                type="custom",
-                content_cls=HealthConditionDialog(),
-                buttons=[
-                    MDFlatButton(
-                        text="CANCEL",
-                        on_release=lambda x: self.dialog.dismiss()
-                    ),
-                    MDRaisedButton(
-                        text="ADD",
-                        on_release=self.save_health_condition
-                    ),
-                ],
-            )
+        self.dialog = MDDialog(
+            title="Add Health Condition",
+            type="custom",
+            content_cls=HealthConditionDialog(),
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL",
+                    on_release=lambda x: self.dialog.dismiss()
+                ),
+                MDRaisedButton(
+                    text="ADD",
+                    on_release=self.save_health_condition
+                ),
+            ],
+        )
         self.dialog.open()
     
     def save_health_condition(self, *args):

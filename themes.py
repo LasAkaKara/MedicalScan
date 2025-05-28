@@ -1,25 +1,20 @@
-from kivy.utils import get_color_from_hex
+# Colors
+PRIMARY_COLOR = "#2F3A56" 
+SECONDARY_COLOR = "#406D96"
+BACKGROUND_COLOR = "#F5F5F5"
+ERROR_COLOR = "#FF4444"
+TEXT_COLOR = "#333333"
+HINT_COLOR = "#999999"
+SECONDARY_TEXT = "#757575"
+ACCENT_COLOR = "#FF4081"
+SUCCESS_COLOR = "#4CAF50"
 
-class AppTheme:
-    # Colors
-    PRIMARY = '#406D96'
-    PRIMARY_DARK = '#2F3A56'
-    BACKGROUND = '#F5F5F5'
-    ERROR = '#FF4444'
-    TEXT = '#333333'
-    HINT = '#999999'
+# Fonts
+FONT_FAMILY = "Roboto"
+FONT_SIZE_XL = 32
+FONT_SIZE_LG = 24
+FONT_SIZE_MD = 16
+FONT_SIZE_SM = 12
 
-    # Fonts
-    FONT_SIZE_SMALL = 14
-    FONT_SIZE_MEDIUM = 16
-    FONT_SIZE_LARGE = 28
-    FONT_SIZE_XLARGE = 32
-
-    # Spacing
-    PADDING = 20
-    SPACING = 15
-    BORDER_RADIUS = 10
-
-    @classmethod
-    def get_color(cls, color_name):
-        return get_color_from_hex(getattr(cls, color_name)) 
+# Example usage for PySide6 widgets:
+# widget.setStyleSheet(f"color: {PRIMARY_COLOR}; font-size: {FONT_SIZE_MD}px; font-family: {FONT_FAMILY};")

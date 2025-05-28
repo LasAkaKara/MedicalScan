@@ -1,88 +1,73 @@
-import os
-os.environ['KIVY_GL_BACKEND'] = 'angle_sdl2'
-
-from kivy.config import Config
-Config.set('graphics', 'multisamples', '0')
-Config.set('graphics', 'width', '400')
-Config.set('graphics', 'height', '700')
-
-from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
-from kivy.core.window import Window
+import sys
+from PySide6.QtWidgets import QApplication, QStackedWidget
 from views.screens.python.login_screen import LoginScreen
 from views.screens.python.signup_screen import SignupScreen
+from views.screens.python.home_screen import HomeScreen
 from views.screens.python.verification_screen import VerificationScreen
 from views.screens.python.reset_password_screen import ResetPasswordScreen
-from views.screens.python.home_screen import HomeScreen
-from views.screens.python.history_screen import HistoryScreen
-from views.screens.python.prescription_detail_screen import PrescriptionDetailScreen
-from views.screens.python.scan_screen import ScanScreen
-from views.screens.python.settings_screen import SettingsScreen
-from views.screens.python.profile_screen import ProfileScreen
-from views.screens.python.root_screen import RootWidget
-from kivymd.app import MDApp
-from kivy.lang import Builder
-from services.database_service import DatabaseService
-from controllers.db_controller import DatabaseController
 
-class MedicalApp(MDApp):
-    def build(self):
-        self.load_all_kv_files()
-        # Force recreate database (remove this in production)
-        if os.path.exists('medical.db'):
-            os.remove('medical.db')
-            print("Removed old database")
-        
-        # Initialize database
-        self.db_service = DatabaseService()
-        self.db_service.check_database()
-        
-        # Also initialize the controller
-        self.db_controller = DatabaseController('app.db')
-        self.db_controller.create_tables()
+class MedicalApp(QApplication):
+    def __init__(self, argv):
+        super().__init__(argv)
+        self.stack = QStackedWidget()
 
-        self.theme_cls.theme_style_switch_animation = True
-        self.theme_cls.theme_style = "Light"
-        self.theme_cls.primary_palette = "Blue"
-        root = RootWidget()
-        return root
-    
-    def load_all_kv_files(self):
-        kv_dir = os.path.join(os.path.dirname(__file__), "views", "screens", "kv")
-        
-        kv_files = [
-            "root_screen.kv",
-            "login_screen.kv",
-            "signup_screen.kv",
-            "verification_screen.kv",
-            "reset_password_screen.kv",
-            "home_screen.kv",
-            "history_screen.kv",
-            "prescription_detail_screen.kv",
-            "scan_screen.kv",
-            "settings_screen.kv",
-            "profile_screen.kv"
-        ]
+        # Instantiate screens
+        self.login_screen = LoginScreen()
+        self.signup_screen = SignupScreen()
+        self.home_screen = HomeScreen()
+        self.verification_screen = VerificationScreen()
+        self.reset_password_screen = ResetPasswordScreen()
 
-        for kv_file in kv_files:
-            kv_path = os.path.join(kv_dir, kv_file)
-            if os.path.exists(kv_path):
-                Builder.load_file(kv_path)
-            else:
-                print(f"❌ KV file not found: {kv_path}")
+        # Add screens to stack
+        self.stack.addWidget(self.login_screen)
+        self.stack.addWidget(self.signup_screen)
+        self.stack.addWidget(self.home_screen)
+        self.stack.addWidget(self.verification_screen)
+        self.stack.addWidget(self.reset_password_screen)
 
-    def on_stop(self):
-        # Close database connections
-        if hasattr(self, 'db_service'):
-            self.db_service.close()
-        if hasattr(self, 'db_controller'):
-            self.db_controller.close()
+        # Connect navigation signals
+        self.login_screen.go_to_signup.connect(self.show_signup)
+        self.signup_screen.go_to_login.connect(self.show_login)
+        self.login_screen.login_success.connect(self.show_home)
+        self.home_screen.go_to_login.connect(self.show_login)
+        self.home_screen.go_to_scan.connect(self.show_scan)  # Placeholder for scan screen
+
+        # Verification navigation
+        self.login_screen.go_to_verify.connect(self.show_verification)
+        self.signup_screen.go_to_verify.connect(self.show_verification)
+        self.verification_screen.go_to_login.connect(self.show_login)
+
+        # Reset password navigation
+        self.login_screen.go_to_reset_password.connect(self.show_reset_password)
+        self.reset_password_screen.go_to_login.connect(self.show_login)
+
+        self.stack.setCurrentWidget(self.login_screen)
+        self.stack.setFixedSize(400, 700)
+        self.stack.show()
+
+    def show_signup(self):
+        self.stack.setCurrentWidget(self.signup_screen)
+
+    def show_login(self):
+        self.stack.setCurrentWidget(self.login_screen)
+
+    def show_home(self, email=None):
+        self.stack.setCurrentWidget(self.home_screen)
+
+    def show_verification(self, email):
+        self.verification_screen.set_email(email)
+        self.stack.setCurrentWidget(self.verification_screen)
+
+    def show_reset_password(self, email):
+        self.reset_password_screen.set_email(email)
+        self.stack.setCurrentWidget(self.reset_password_screen)
+
+    def show_scan(self):
+        # Placeholder: implement scan screen and navigation
+        pass
 
 if __name__ == '__main__':
-    Config.set('graphics', 'width', '400')
-    Config.set('graphics', 'height', '700')
-    Config.set('graphics', 'resizable', False)
-    Config.write()
-    
-    app = MedicalApp()
-    app.run() 
+    app = MedicalApp(sys.argv)
+
+    app.setStyleSheet("QStackedWidget { background-color: #fbfcff; }")
+    sys.exit(app.exec())
