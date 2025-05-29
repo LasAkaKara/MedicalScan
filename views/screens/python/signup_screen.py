@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Signal, QThread, QObject
 from controllers.auth_controller import AuthController
-from views.screens.pyside.signup_screen import SignupScreenUI
+from views.screens.pyside.signup_screen_ui import SignupScreenUI
 import re
 
 class EmailCheckWorker(QObject):

@@ -12,7 +12,7 @@ from views.screens.python.login_screen import LoginScreen
 from views.screens.python.signup_screen import SignupScreen
 from views.screens.python.verification_screen import VerificationScreen
 from views.screens.python.home_screen import HomeScreen
-from views.screens.python.history_screen import HistoryScreen
+from views.screens.python.prescription_screen import HistoryScreen
 from views.screens.python.prescription_detail_screen import PrescriptionDetailScreen
 from views.screens.python.scan_screen import ScanScreen, CornerMarker
 from views.screens.python.reset_password_screen import ResetPasswordScreen

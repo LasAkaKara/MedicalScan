@@ -1,7 +1,7 @@
 from PySide6.QtCore import Signal, QTimer
 from PySide6.QtWidgets import QMessageBox
 from controllers.auth_controller import AuthController
-from views.screens.pyside.reset_password_screen import ResetPasswordScreenUI
+from views.screens.pyside.reset_password_screen_ui import ResetPasswordScreenUI
 
 class ResetPasswordScreen(ResetPasswordScreenUI):
     go_to_login = Signal()

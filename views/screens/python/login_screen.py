@@ -5,7 +5,7 @@ import webbrowser
 from dotenv import load_dotenv
 from urllib.parse import urlencode
 from controllers.auth_controller import AuthController
-from views.screens.pyside.login_screen import LoginScreenUI
+from views.screens.pyside.login_screen_ui import LoginScreenUI
 
 load_dotenv()
 

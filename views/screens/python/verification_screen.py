@@ -1,7 +1,7 @@
 from PySide6.QtCore import Signal, QTimer
 from PySide6.QtWidgets import QMessageBox
 from controllers.auth_controller import AuthController
-from views.screens.pyside.verification_screen import VerificationScreenUI
+from views.screens.pyside.verification_screen_ui import VerificationScreenUI
 
 class VerificationScreen(VerificationScreenUI):
     go_to_login = Signal()
