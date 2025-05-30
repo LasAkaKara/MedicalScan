@@ -42,7 +42,7 @@ class ScanZoneOverlay(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # 1. Draw semi-transparent overlay (the mask ensures the scan zone is a hole)
-        overlay_color = QColor(0, 0, 0, 160)
+        overlay_color = QColor(0, 0, 0, 100)
         painter.setBrush(overlay_color)
         painter.setPen(Qt.NoPen)
         painter.drawRect(self.rect())

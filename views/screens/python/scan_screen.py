@@ -908,7 +908,9 @@ class ScanScreen(ScanScreenUI):
             self.capture_btn.setEnabled(False)
 
     def display_camera_frame(self, frame):
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Flip the frame horizontally
+        flipped = cv2.flip(frame, 1)
+        rgb = cv2.cvtColor(flipped, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb.shape
         bytes_per_line = ch * w
         qt_img = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
