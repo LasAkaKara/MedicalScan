@@ -856,13 +856,8 @@ class ScanScreen(ScanScreenUI):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.back_btn.clicked.connect(self.handle_back_to_home)
-        self.crop_back_btn.clicked.connect(self.handle_recapture)
-        self.settings_btn.clicked.connect(self.handle_settings)
         self.capture_btn.clicked.connect(self.handle_capture)
         self.upload_btn.clicked.connect(self.handle_upload)
-        self.auto_detect_btn.clicked.connect(self.handle_auto_detect)
-        self.rotate_btn.clicked.connect(self.handle_rotate)
-        self.confirm_btn.clicked.connect(self.handle_confirm)
 
         # Camera and image state
         self.camera_initialized = False
@@ -918,9 +913,14 @@ class ScanScreen(ScanScreenUI):
         bytes_per_line = ch * w
         qt_img = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_img)
-        self.camera_label.setPixmap(pixmap.scaled(
-            self.camera_label.width(), self.camera_label.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-        ))
+        self.camera_label.setPixmap(
+            pixmap.scaled(
+                self.camera_label.width(),
+                self.camera_label.height(),
+                Qt.KeepAspectRatioByExpanding,
+                Qt.SmoothTransformation
+            )
+        )
 
     def display_image(self, image):
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -928,9 +928,14 @@ class ScanScreen(ScanScreenUI):
         bytes_per_line = ch * w
         qt_img = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_img)
-        self.camera_label.setPixmap(pixmap.scaled(
-            self.camera_label.width(), self.camera_label.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-        ))
+        self.camera_label.setPixmap(
+            pixmap.scaled(
+                self.camera_label.width(),
+                self.camera_label.height(),
+                Qt.KeepAspectRatioByExpanding,  # <-- This line changed
+                Qt.SmoothTransformation
+            )
+        )
 
     # --- Capture and upload ---
     def handle_capture(self):
@@ -968,8 +973,7 @@ class ScanScreen(ScanScreenUI):
         self.crop_overlay.raise_()
         self.crop_overlay.show()
         # Connect crop controls
-        self.crop_back_btn.clicked.connect(self.handle_recapture)
-        self.auto_detect_btn.clicked.connect(self.handle_auto_detect)
+        # self.crop_back_btn.clicked.connect(self.handle_recapture)
         self.rotate_btn.clicked.connect(self.handle_rotate)
         self.confirm_btn.clicked.connect(self.handle_confirm)
 
@@ -1067,7 +1071,6 @@ class ScanScreen(ScanScreenUI):
     def showEvent(self, event):
         super().showEvent(event)
         self.start_camera()
-        self.show_capture_controls()
 
     def hideEvent(self, event):
         super().hideEvent(event)
