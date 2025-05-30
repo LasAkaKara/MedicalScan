@@ -50,6 +50,7 @@ class MedicalApp(QApplication):
         self.home_screen.go_to_prescription.connect(self.show_prescription)
         self.home_screen.go_to_profile.connect(self.show_profile)
         self.home_screen.go_to_settings.connect(self.show_settings)
+        self.prescription_screen.go_to_home.connect(self.show_home)
         self.prescription_screen.go_to_add_prescription.connect(self.show_add_prescription)
         self.profile_screen.go_to_login.connect(self.show_login)
         self.settings_screen.go_to_home.connect(self.show_home)

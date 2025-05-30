@@ -284,38 +284,35 @@ from services.database_service import DatabaseService
 
 class PrescriptionScreen(PrescriptionScreenUI):
     go_to_add_prescription = Signal()
+    go_to_home = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.add_btn.clicked.connect(self.handle_add_prescription)
         self.search_input.textChanged.connect(self.search_prescriptions)
+        self.back_btn.clicked.connect(self.handle_back)
         self.db = DatabaseService()
         self.user_id = 2  # Replace with actual user_id logic if needed
         self.load_prescriptions()
 
     def load_prescriptions(self):
         prescriptions = self.db.get_user_prescriptions(self.user_id)
-        self.display_prescriptions(prescriptions)
+        # self.display_prescriptions(prescriptions)
 
-    def display_prescriptions(self, prescriptions):
-        # Clear old widgets
-        for i in reversed(range(self.prescriptions_layout.count())):
-            widget = self.prescriptions_layout.itemAt(i).widget()
-            if widget:
-                widget.setParent(None)
-        if not prescriptions:
-            self.prescriptions_layout.addWidget(QLabel("Không có đơn thuốc nào"))
-            return
-        for p in prescriptions:
-            card = PrescriptionCard(
-                title=p.get('name', 'Không có tên'),
-                category=p.get('category_name', 'Không phân loại'),
-                category_color="#F2F3DA",  # You can map colors as needed
-                category_text_color="#887A05",
-                date=p.get('created_at', ''),
-                hospital=p.get('hospital_name', '')
-            )
-            self.prescriptions_layout.addWidget(card)
+    # def display_prescriptions(self, prescriptions):
+    #     # Clear old widgets
+    #     for i in reversed(range(self.prescriptions_layout.count())):
+    #         widget = self.prescriptions_layout.itemAt(i).widget()
+    #         if widget:
+    #             widget.setParent(None)
+    #     if not prescriptions:
+    #         self.prescriptions_layout.addWidget(QLabel("Không có đơn thuốc nào"))
+    #         return
+    #     for p in prescriptions:
+    #         # You should fetch medicines for each prescription here if needed
+    #         # For demo, assume p['medicines'] is already present
+    #         card = PrescriptionCard(p)
+    #         self.prescriptions_layout.addWidget(card)
 
     def search_prescriptions(self, query):
         prescriptions = self.db.get_user_prescriptions(self.user_id)
@@ -327,7 +324,10 @@ class PrescriptionScreen(PrescriptionScreenUI):
                 or query in p.get('hospital_name', '').lower()
                 or query in p.get('category_name', '').lower()
             ]
-        self.display_prescriptions(prescriptions)
+        # self.display_prescriptions(prescriptions)
 
     def handle_add_prescription(self):
         self.go_to_add_prescription.emit()
+
+    def handle_back(self):
+        self.go_to_home.emit()

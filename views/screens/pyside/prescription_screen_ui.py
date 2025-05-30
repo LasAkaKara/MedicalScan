@@ -505,57 +505,374 @@
 #                 pos_hint: {'right': 0.96, 'y': 0.2}
 #                 on_press: root.add_prescription()
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QScrollArea, QFrame, QLineEdit, QSizePolicy
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QScrollArea, QFrame,
+    QLineEdit, QSizePolicy, QToolButton, QGridLayout, QGraphicsDropShadowEffect
+)
+from PySide6.QtGui import QIcon, QAction
+from PySide6.QtCore import Qt, QSize
+from themes import PRIMARY_COLOR, FONT_SIZE_MD, FONT_SIZE_XL, HINT_COLOR, FONT_FAMILY
+
+class MedicineRow(QFrame):
+    def __init__(self, name, med_type, quantity, times, parent=None):
+        super().__init__(parent)
+        self.setFrameShape(QFrame.NoFrame)
+        self.setStyleSheet("""
+            background: #FCFCFD;
+            border-radius: 8px;
+            border: 1px solid #EAECF0;
+        """)
+
+        # Main layout for the row with uniform padding
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(12, 8, 12, 8)
+        main_layout.setAlignment(Qt.AlignVCenter)
+
+        # Left: Name and info below
+        name_info_widget = QWidget()
+        name_info_layout = QVBoxLayout(name_info_widget)
+        name_info_layout.setContentsMargins(0, 0, 0, 0)
+        name_info_layout.setSpacing(8)
+
+        name_label = QLabel(name)
+        name_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; font-weight: bold; color: #344054; border: none; margin-bottom: 0px;")
+        name_info_layout.addWidget(name_label)
+
+        # Info row: type, quantity, times
+        info_row = QHBoxLayout()
+        info_row.setContentsMargins(0, 0, 0, 0)
+        info_row.setSpacing(4)
+
+        type_label = QLabel(med_type)
+        type_label.setStyleSheet("font-size: 13px; color: #406D96; border: none; margin-right: 0px;")
+        info_row.addWidget(type_label)
+
+        qty_label = QLabel(f"{quantity} viên")
+        qty_label.setStyleSheet("font-size: 13px; color: #406D96; border: none; margin-right: 0px;")
+        info_row.addWidget(qty_label)
+
+        times_label = QLabel(", ".join(times))
+        times_label.setStyleSheet("font-size: 13px; color: #406D96; border: none;")
+        info_row.addWidget(times_label)
+
+        name_info_layout.addLayout(info_row)
+
+        main_layout.addWidget(name_info_widget, 4, alignment=Qt.AlignVCenter)
+        main_layout.addStretch()
+
+        self.edit_btn = QToolButton()
+        self.edit_btn.setIcon(QIcon("assets/edit.png"))
+        self.edit_btn.setStyleSheet("border: none;")
+        self.edit_btn.setToolTip("Chỉnh sửa thuốc")
+        main_layout.addWidget(self.edit_btn, 0, alignment=Qt.AlignVCenter)
 
 class PrescriptionCard(QFrame):
-    def __init__(self, title, category, category_color, category_text_color, date, hospital, parent=None):
+    def __init__(self, prescription, parent=None):
         super().__init__(parent)
-        self.setFrameShape(QFrame.StyledPanel)
+        self.setFrameShape(QFrame.NoFrame)  # No border for the card container
+        self.setFixedWidth(360)  # Set a smaller fixed width for the card
         self.setStyleSheet(f"""
             background: #fff;
             border-radius: 16px;
-            border: 1px solid #e0e0e0;
+            border: none;
             margin-bottom: 12px;
+            font-family: {FONT_FAMILY};
         """)
-        layout = QVBoxLayout(self)
-        title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 17px; font-weight: bold; color: #344054;")
-        layout.addWidget(title_label)
-        info_label = QLabel(f"{hospital} | {date} | {category}")
-        info_label.setStyleSheet(f"font-size: 13px; color: {category_text_color};")
-        layout.addWidget(info_label)
+        self.expanded = False
+        self.prescription = prescription
+
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(12, 12, 12, 12)
+
+        # Box shadow effect for the card
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(24)
+        shadow.setOffset(0, 6)
+        shadow.setColor(Qt.gray)
+        self.setGraphicsEffect(shadow)
+
+        # Top row: Title and expand/collapse
+        top_row = QHBoxLayout()
+        top_row.setSpacing(0)
+        title_label = QLabel(prescription.get('name', 'Không có tên'))
+        title_label.setStyleSheet(f"font-size: 17px; font-weight: bold; color: #344054; font-family: {FONT_FAMILY};")
+        top_row.addWidget(title_label)
+        top_row.addStretch()
+
+        # Expand/collapse button with custom image
+        self.expand_btn = QToolButton()
+        self.expand_btn.setIcon(QIcon("assets/down-arrow.png"))
+        self.expand_btn.setCheckable(True)
+        self.expand_btn.setChecked(False)
+        self.expand_btn.clicked.connect(self.toggle_expand)
+        self.expand_btn.setStyleSheet(f"""
+            font-family: {FONT_FAMILY};
+            border: none;
+            padding: 0px;
+        """)
+        self.expand_btn.setIconSize(QSize(32, 32))
+        self.expand_btn.setFixedSize(40, 40)
+        top_row.addWidget(self.expand_btn, alignment=Qt.AlignVCenter)
+        self.main_layout.addLayout(top_row)
+
+        # Category tag below the title (fit text width)
+        category = prescription.get('category_name', 'Không phân loại')
+        tag_row = QHBoxLayout()
+        tag_row.setContentsMargins(0, 0, 0, 0)
+        tag_row.setSpacing(0)
+
+        # Category tag with icon inside (icon left, text right)
+        tag_widget = QWidget()
+        tag_layout = QHBoxLayout(tag_widget)
+        tag_layout.setContentsMargins(8, 0, 8, 0)  # padding left/right for pill look
+        tag_layout.setSpacing(6)
+
+        icon_label = QLabel()
+        icon_label.setPixmap(QIcon("assets/price-tag-yellow.png").pixmap(32, 32))
+        icon_label.setFixedSize(22, 32)
+        tag_layout.addWidget(icon_label)
+
+        tag = QLabel(category)
+        tag.setStyleSheet(f"""
+            font-size: 12px;
+            color: #887A05;
+            background: transparent;
+            font-family: {FONT_FAMILY};
+        """)
+        tag_layout.addWidget(tag)
+
+        tag_widget.setStyleSheet(f"""
+            background: #F2F3DA;
+            border-radius: 8px;
+            min-width: 0px;
+            max-width: 1000px;
+            margin-top: 2px;
+        """)
+        tag_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        tag_widget.setMaximumWidth(tag.fontMetrics().horizontalAdvance(category) + 16 + 24)  # icon + padding
+
+        tag_row.addWidget(tag_widget)
+        tag_row.addStretch()
+        tag_row_widget = QWidget()
+        tag_row_widget.setLayout(tag_row)
+        # Reduce the vertical space between name and category
+        self.main_layout.addWidget(tag_row_widget, alignment=Qt.AlignLeft)
+        self.main_layout.setSpacing(2)  # Even smaller spacing between rows
+
+        # Info row: date and hospital
+        info_row = QHBoxLayout()
+        # Date icon
+        date_icon_label = QLabel()
+        date_icon_label.setPixmap(QIcon("assets/calendar-small.png").pixmap(32, 32))
+        date_icon_label.setFixedSize(20, 32)
+        date_icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        info_row.addWidget(date_icon_label)
+        # Date text
+        date_label = QLabel(prescription.get('created_at', ''))
+        date_label.setStyleSheet(f"font-size: 13px; font-weight: 600; color: #667085; font-family: {FONT_FAMILY};")
+        info_row.addWidget(date_label)
+        # Hospital icon
+        hospital_icon_label = QLabel()
+        hospital_icon_label.setPixmap(QIcon("assets/hospital.png").pixmap(32, 32))
+        hospital_icon_label.setFixedSize(20, 32)
+        hospital_icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        info_row.addWidget(hospital_icon_label)
+        # Hospital text
+        hospital_label = QLabel(prescription.get('hospital_name', ''))
+        hospital_label.setStyleSheet(f"font-size: 13px; font-weight: 600; color: #667085; margin-left: 6px; font-family: {FONT_FAMILY};")
+        info_row.addWidget(hospital_label)
+        info_row.addStretch()
+        self.main_layout.addLayout(info_row)
+
+        # Expandable medicine list
+        self.meds_widget = QWidget()
+        self.meds_layout = QVBoxLayout(self.meds_widget)
+        self.meds_layout.setContentsMargins(8, 4, 8, 4)
+        self.meds_layout.setSpacing(4)
+        self.meds_widget.setVisible(False)
+        # Add medicine rows if any
+        for med in prescription.get('medicines', []):
+            med_row = MedicineRow(
+                name=med.get('medicine_name', ''),
+                med_type=med.get('type', ''),
+                quantity=med.get('quantity_per_time', ''),
+                times=med.get('usage_time', []),
+            )
+            # Set font family for all QLabel children in MedicineRow
+            for child in med_row.findChildren(QLabel):
+                child.setStyleSheet(child.styleSheet() + f"font-family: {FONT_FAMILY};")
+            med_row.setStyleSheet(med_row.styleSheet() + f"font-family: {FONT_FAMILY};")
+            self.meds_layout.addWidget(med_row)
+        self.main_layout.addWidget(self.meds_widget)
+
+    def toggle_expand(self):
+        self.expanded = not self.expanded
+        self.meds_widget.setVisible(self.expanded)
+        if self.expanded:
+            self.expand_btn.setIcon(QIcon("assets/up-arrow.png"))
+        else:
+            self.expand_btn.setIcon(QIcon("assets/down-arrow.png"))
 
 class PrescriptionScreenUI(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        main_layout = QVBoxLayout(self)
-        main_layout.setAlignment(Qt.AlignTop)
-        main_layout.setSpacing(12)
-        main_layout.setContentsMargins(16, 16, 16, 16)
+        MAIN_MARGIN = 16  # Set your desired margin here
 
-        header = QLabel("Tất cả đơn thuốc")
-        header.setStyleSheet("font-size: 24px; font-weight: bold; color: #002D40;")
-        main_layout.addWidget(header)
+        # Outer layout for margin, inner layout for content (no margin)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setAlignment(Qt.AlignTop)
+        outer_layout.setSpacing(0)
+        outer_layout.setContentsMargins(MAIN_MARGIN, 0, MAIN_MARGIN, 0)  # Only this layout has margin
 
-        # Search box
-        search_layout = QHBoxLayout()
+        # Inner widget and layout (no margin, so shadow is not clipped)
+        inner_widget = QWidget()
+        inner_layout = QVBoxLayout(inner_widget)
+        inner_layout.setAlignment(Qt.AlignTop)
+        inner_layout.setSpacing(0)
+        inner_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Header
+        header = QFrame()
+        header.setStyleSheet("background: #fff;")
+        header_layout = QVBoxLayout(header)
+        header_layout.setSpacing(0)
+
+        # Top row: back, title+subtitle, bell (centered)
+        top_row = QHBoxLayout()
+        top_row.setContentsMargins(0, 0, 0, 0)
+        top_row.setSpacing(0)
+
+        self.back_btn = QToolButton()
+        self.back_btn.setIcon(QIcon("assets/back.png"))
+        self.back_btn.setIconSize(QSize(28, 28))
+        self.back_btn.setFixedSize(36, 36)
+        self.back_btn.setStyleSheet("background: transparent;")
+        top_row.addWidget(self.back_btn, alignment=Qt.AlignVCenter)
+
+        # Center widget for title and subtitle
+        center_widget = QWidget()
+        center_layout = QVBoxLayout(center_widget)
+        center_layout.setContentsMargins(0, 0, 0, 0)
+        center_layout.setSpacing(0)
+        center_layout.setAlignment(Qt.AlignCenter)
+
+        title = QLabel("Đơn thuốc")
+        title.setStyleSheet(f"font-size: {FONT_SIZE_XL}px; font-weight: 700; color: {PRIMARY_COLOR};")
+        title.setAlignment(Qt.AlignCenter)
+        center_layout.addWidget(title)
+
+        subtitle = QLabel("Quản lý các đơn thuốc của bạn tại đây")
+        subtitle.setStyleSheet(f"font-size: 14px; font-weight: 600; color: {HINT_COLOR};")
+        subtitle.setAlignment(Qt.AlignCenter)
+        center_layout.addWidget(subtitle)
+
+        top_row.addWidget(center_widget, stretch=1, alignment=Qt.AlignVCenter)
+
+        self.bell_btn = QToolButton()
+        self.bell_btn.setIcon(QIcon("assets/bell.png"))
+        self.bell_btn.setIconSize(QSize(28, 28))
+        self.bell_btn.setFixedSize(36, 36)
+        self.bell_btn.setStyleSheet("background: transparent;")
+        top_row.addWidget(self.bell_btn, alignment=Qt.AlignVCenter)
+
+        header_layout.addLayout(top_row)
+        inner_layout.addWidget(header)
+
+        # Search bar with icon inside
+        search_frame = QFrame()
+        search_layout = QHBoxLayout(search_frame)
+        search_layout.setSpacing(0)
+        search_layout.setAlignment(Qt.AlignCenter)  # Center the input horizontally
+
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Tìm kiếm đơn thuốc...")
-        self.search_input.setStyleSheet("font-size: 16px; padding: 8px; border-radius: 8px; border: 1px solid #e0e0e0;")
+        self.search_input.setPlaceholderText("Nhập tên đơn thuốc")
+        self.search_input.setFixedHeight(56)
+        self.search_input.setFixedWidth(350)  # Make the input narrower
+        self.search_input.setStyleSheet(f"""
+            font-size: {FONT_SIZE_MD}px;
+            padding: 10px 10px 10px 10px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+        """)
+        # Add magnify icon inside input, bigger size
+        magnify_icon = QIcon("assets/search-analytics.png")
+        action = QAction(magnify_icon, "", self.search_input)
+        action.setIconText("search")
+        self.search_input.addAction(action, QLineEdit.LeadingPosition)
+        self.search_input.setStyleSheet(self.search_input.styleSheet() + "QLineEdit::leading-icon { width: 36px; height: 36px; }")
+
         search_layout.addWidget(self.search_input)
-        main_layout.addLayout(search_layout)
+        inner_layout.addWidget(search_frame)
+
+        # Add drop shadow effect
+        shadow = QGraphicsDropShadowEffect(self.search_input)
+        shadow.setBlurRadius(16)
+        shadow.setOffset(0, 4)
+        shadow.setColor(Qt.gray)
+        self.search_input.setGraphicsEffect(shadow)
+
+        search_layout.addWidget(self.search_input)
+        inner_layout.addWidget(search_frame)
+
+        # Section title
+        section_title = QLabel("Tất cả")
+        section_title.setStyleSheet(f"font-size: 18px; font-weight: bold; color: #002D40; margin-top: 16px; margin-bottom: 8px; font-family: {FONT_FAMILY}")
+        section_title.setAlignment(Qt.AlignLeft)
+        inner_layout.addWidget(section_title)
 
         # Scroll area for prescriptions
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setStyleSheet("""
+            QScrollArea {
+            border: none;
+            background: transparent;
+            }
+            QScrollArea > QWidget {
+            background: transparent;
+            }
+            QScrollBar:vertical, QScrollBar:horizontal {
+            background: transparent;
+            }
+        """)
+        self.scroll_area.viewport().setStyleSheet("background: transparent;")
         self.prescriptions_container = QWidget()
         self.prescriptions_layout = QVBoxLayout(self.prescriptions_container)
-        self.prescriptions_layout.setAlignment(Qt.AlignTop)
+        self.prescriptions_layout.setAlignment(Qt.AlignHCenter | Qt.AlignTop)  # Center horizontally, top vertically
+        self.prescriptions_layout.setContentsMargins(0, 0, 0, 0)
         self.scroll_area.setWidget(self.prescriptions_container)
-        main_layout.addWidget(self.scroll_area)
+        inner_layout.addWidget(self.scroll_area)
+
+        # --- Add a sample prescription card for preview ---
+        sample_prescription = {
+            "name": "Thuốc tuyến giáp",
+            "category_name": "Mãn tính",
+            "created_at": "2024-06-01",
+            "hospital_name": "Bệnh viện Bạch Mai",
+            "medicines": [
+                {
+                    "medicine_name": "Levothyroxine",
+                    "type": "Viên nén",
+                    "quantity_per_time": "1",
+                    "usage_time": ["Sáng"],
+                },
+                {
+                    "medicine_name": "Calcium",
+                    "type": "Viên nén",
+                    "quantity_per_time": "2",
+                    "usage_time": ["Trưa", "Tối"],
+                }
+            ]
+        }
+        # Keep a reference to avoid garbage collection
+        self._sample_card = PrescriptionCard(sample_prescription)
+        self.prescriptions_layout.addWidget(self._sample_card)
 
         # Add button
         self.add_btn = QPushButton("Thêm đơn thuốc")
-        self.add_btn.setStyleSheet("background: #406D96; color: white; font-size: 16px; border-radius: 8px; padding: 10px;")
-        main_layout.addWidget(self.add_btn)
+        self.add_btn.setStyleSheet("background: #406D96; color: white; font-size: 16px; border-radius: 8px; padding: 10px; margin-top: 16px; margin-bottom: 16px;")
+        inner_layout.addWidget(self.add_btn)
+
+        # Add the inner_widget to the outer_layout
+        outer_layout.addWidget(inner_widget)
