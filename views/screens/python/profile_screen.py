@@ -448,22 +448,23 @@
 #         super().__init__(**kwargs)
 #         self.condition = "" 
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QMessageBox, QInputDialog
-from views.screens.pyside.profile_screen_ui import ProfileScreenUI
+from views.screens.pyside.profile_screen_ui import ProfileScreenUI, EditProfileModal, ChangePasswordModal
 from services.database_service import DatabaseService
 
 class ProfileScreen(ProfileScreenUI):
     go_to_login = Signal()
+    go_to_home = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.back_btn.clicked.connect(self.handle_back_to_home)
         self.logout_btn.clicked.connect(self.handle_logout)
         self.edit_btn.clicked.connect(self.handle_edit)
         self.change_pw_btn.clicked.connect(self.handle_change_password)
-        self.notif_medication.clicked.connect(lambda: self.toggle_notif(self.notif_medication, "Nhắc thuốc"))
-        self.notif_refills.clicked.connect(lambda: self.toggle_notif(self.notif_refills, "Nhắc tái đơn"))
-        self.notif_appointments.clicked.connect(lambda: self.toggle_notif(self.notif_appointments, "Nhắc lịch hẹn"))
+        self.notif_medication.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc thuốc", state))
+        self.notif_refills.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc tái đơn", state))
         self.db = DatabaseService()
         self.user_id = 2  # Replace with actual user/session logic
         self.load_user_data()
@@ -475,16 +476,15 @@ class ProfileScreen(ProfileScreenUI):
             self.email_label.setText(user.get('email', 'Not provided'))
             self.prescription_count_label.setText(f"Đơn thuốc: {user.get('prescription_count', 0)}")
             self.scan_count_label.setText(f"Lượt quét: {user.get('scan_count', 0)}")
-            self.last_activity_label.setText(f"Hoạt động gần nhất: {user.get('last_activity', '-')}")
+            # self.last_activity_label.setText(f"Hoạt động gần nhất: {user.get('last_activity', '-')}")
             conditions = user.get('health_conditions', [])
-            if conditions:
-                self.health_conditions_label.setText("Tình trạng sức khỏe: " + ", ".join(conditions))
-            else:
-                self.health_conditions_label.setText("Tình trạng sức khỏe: Không có")
+            # if conditions:
+            #     self.health_conditions_label.setText("Tình trạng sức khỏe: " + ", ".join(conditions))
+            # else:
+            #     self.health_conditions_label.setText("Tình trạng sức khỏe: Không có")
             # Notification preferences (example)
-            self.notif_medication.setChecked(user.get('notify_medication', True))
-            self.notif_refills.setChecked(user.get('notify_refills', True))
-            self.notif_appointments.setChecked(user.get('notify_appointments', False))
+            # self.notif_medication.setChecked(user.get('notify_medication', True))
+            # self.notif_refills.setChecked(user.get('notify_refills', True))
         else:
             self.full_name_label.setText("User")
             self.email_label.setText("Not provided")
@@ -494,16 +494,33 @@ class ProfileScreen(ProfileScreenUI):
                                      QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.go_to_login.emit()
+    
+    def handle_back_to_home(self):
+        self.go_to_home.emit()
 
     def handle_edit(self):
-        name, ok = QInputDialog.getText(self, "Chỉnh sửa tên", "Tên mới:", text=self.full_name_label.text())
-        if ok and name:
+        def save_callback(name, email, phone):
             self.full_name_label.setText(name)
+            self.email_label.setText(email)
             # Save to DB if needed
+        dlg = EditProfileModal(
+            self.full_name_label.text(),
+            self.email_label.text(),
+            "",  # phone if you have it
+            save_callback,
+            self
+        )
+        dlg.exec()
+    
 
     def handle_change_password(self):
-        QMessageBox.information(self, "Đổi mật khẩu", "Chức năng đổi mật khẩu sẽ được bổ sung.")
+        def change_callback(current, new, confirm):
+            # Validate and save password here
+            print("Current:", current, "New:", new, "Confirm:", confirm)
+        dlg = ChangePasswordModal(change_callback, self)
+        dlg.exec()
 
-    def toggle_notif(self, btn, label):
-        btn.setChecked(not btn.isChecked())
-        btn.setText(f"{label}: {'Bật' if btn.isChecked() else 'Tắt'}")
+    def handle_notif_change(self, label, state):
+        # Do something when the switch is toggled
+        print(f"{label}: {'Bật' if state == Qt.Checked else 'Tắt'}")
+        # Save to DB or update preferences here if needed
