@@ -10,6 +10,7 @@ from views.screens.python.prescription_screen import PrescriptionScreen
 from views.screens.python.profile_screen import ProfileScreen
 from views.screens.python.settings_screen import SettingsScreen
 from views.screens.python.prescription_detail_screen import PrescriptionDetailScreen
+from views.screens.python.calendar_screen import CalendarScreen
 
 class MedicalApp(QApplication):
     def __init__(self, argv):
@@ -28,7 +29,7 @@ class MedicalApp(QApplication):
         self.profile_screen = ProfileScreen()
         self.settings_screen = SettingsScreen()
         self.prescription_detail_screen = PrescriptionDetailScreen()
-        self.stack.addWidget(self.prescription_detail_screen)
+        self.calendar_screen = CalendarScreen()
 
         # Add screens to stack
         self.stack.addWidget(self.login_screen)
@@ -40,6 +41,9 @@ class MedicalApp(QApplication):
         self.stack.addWidget(self.prescription_screen)
         self.stack.addWidget(self.profile_screen)
         self.stack.addWidget(self.settings_screen)
+        self.stack.addWidget(self.prescription_detail_screen)
+        self.stack.addWidget(self.calendar_screen)
+
 
         # Connect navigation signals
         self.login_screen.go_to_signup.connect(self.show_signup)
@@ -57,6 +61,8 @@ class MedicalApp(QApplication):
         self.profile_screen.go_to_home.connect(self.show_home)
         self.settings_screen.go_to_home.connect(self.show_home)
         self.prescription_detail_screen.go_to_history.connect(self.show_prescription)
+        self.home_screen.go_to_calendar.connect(self.show_calendar)
+        self.calendar_screen.go_to_home.connect(self.show_home)
 
 
         # Verification navigation
@@ -114,6 +120,9 @@ class MedicalApp(QApplication):
     def show_prescription_detail(self, prescription_id):
         self.prescription_detail_screen.set_prescription_id(prescription_id)
         self.stack.setCurrentWidget(self.prescription_detail_screen)
+    
+    def show_calendar(self):
+        self.stack.setCurrentWidget(self.calendar_screen)
 
 
 
