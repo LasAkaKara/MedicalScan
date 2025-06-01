@@ -1,475 +1,10 @@
-# #:import utils kivy.utils
-# #:import dp kivy.metrics.dp
-
-# <PasswordChangeDialog>:
-#     size_hint_y: None
-#     height: "260dp"
-    
-#     BoxLayout:
-#         orientation: "vertical"
-#         spacing: "20dp"
-#         size_hint_y: None
-#         height: self.minimum_height
-        
-#         MDTextField:
-#             id: current_password_field
-#             hint_text: "Current Password"
-#             password: True
-#             helper_text: root.current_password_error
-#             helper_text_mode: "on_error"
-#             on_text: root.current_password = self.text
-#             error: True if root.current_password_error else False
-#             size_hint_y: None
-#             height: self.minimum_height
-        
-#         MDTextField:
-#             id: new_password_field
-#             hint_text: "New Password"
-#             password: True
-#             helper_text: root.new_password_error
-#             helper_text_mode: "on_error"
-#             on_text: root.new_password = self.text
-#             error: True if root.new_password_error else False
-#             size_hint_y: None
-#             height: self.minimum_height
-        
-#         MDTextField:
-#             id: confirm_password_field
-#             hint_text: "Confirm New Password"
-#             password: True
-#             helper_text: root.confirm_password_error
-#             helper_text_mode: "on_error"
-#             on_text: root.confirm_password = self.text
-#             error: True if root.confirm_password_error else False
-#             size_hint_y: None
-#             height: self.minimum_height
-
-# <EditProfileDialog>:
-#     size_hint_y: None
-#     height: "260dp"
-
-#     BoxLayout:
-#         orientation: "vertical"
-#         size_hint_y: None
-#         height: self.minimum_height
-#         spacing: dp(16)
-        
-#         MDLabel:
-#             text: "Edit Personal Information"
-#             font_style: "H6"
-#             size_hint_y: None
-#             height: dp(40)
-        
-#         MDTextField:
-#             id: email_field
-#             hint_text: "Email"
-#             text: root.email
-#             size_hint_y: None
-#             height: dp(48)
-#             helper_text: "example@email.com"
-#             helper_text_mode: "on_focus"
-        
-#         MDTextField:
-#             id: full_name_field
-#             hint_text: "Full Name"
-#             text: root.full_name
-#             size_hint_y: None
-#             height: dp(48)
-        
-#         MDTextField:
-#             id: phone_field
-#             hint_text: "Phone"
-#             text: root.phone
-#             size_hint_y: None
-#             height: dp(48)
-#             helper_text: "10-15 digits, optionally with + prefix"
-#             helper_text_mode: "on_focus"
-
-# <HealthConditionDialog>:
-#     size_hint_y: None
-#     height: "120dp"
-    
-#     BoxLayout:
-#         orientation: "vertical"
-#         spacing: "10dp"
-#         size_hint_y: None
-#         height: self.minimum_height
-        
-#         MDTextField:
-#             id: condition_field
-#             hint_text: "Health Condition"
-#             helper_text: root.condition_error
-#             helper_text_mode: "on_error"
-#             on_text: root.condition = self.text
-#             error: True if root.condition_error else False
-#             size_hint_y: None
-#             height: self.minimum_height
-
-# <NotificationSwitch@MDBoxLayout>:
-#     orientation: 'horizontal'
-#     size_hint_y: None
-#     height: dp(50)
-#     spacing: dp(10)
-#     padding: [0, dp(5), 0, dp(5)]
-    
-#     icon: 'bell'
-#     title: 'Notification Title'
-#     subtitle: 'Notification Description'
-#     active: False
-#     callback: None
-    
-#     MDIcon:
-#         icon: root.icon
-#         size_hint: None, None
-#         size: dp(24), dp(24)
-#         pos_hint: {'center_y': 0.5}
-#         theme_text_color: "Custom"
-#         text_color: utils.get_color_from_hex('#406D96')
-    
-#     BoxLayout:
-#         orientation: 'vertical'
-#         spacing: dp(2)
-        
-#         MDLabel:
-#             text: root.title
-#             font_style: 'Subtitle1'
-#             size_hint_y: None
-#             height: dp(24)
-        
-#         MDLabel:
-#             text: root.subtitle
-#             font_style: 'Caption'
-#             theme_text_color: "Secondary"
-#             size_hint_y: None
-#             height: dp(16)
-    
-#     MDSwitch:
-#         active: root.active
-#         pos_hint: {'center_y': 0.5}
-#         on_active: root.callback(self.active) if root.callback else None
-
-# <HealthStatCard@MDCard>:
-#     orientation: 'vertical'
-#     size_hint_y: None
-#     height: dp(120)
-#     padding: dp(16)
-#     md_bg_color: 1, 1, 1, 1
-#     radius: [10]
-#     elevation: 1
-    
-#     icon: 'pill'
-#     title: 'Stat Title'
-#     value: '0'
-#     color: '#2196F3'
-    
-#     AnchorLayout:
-#         anchor_x: 'center'
-#         size_hint_y: None
-#         height: dp(40)
-        
-#         MDIcon:
-#             icon: root.icon
-#             size_hint: None, None
-#             size: dp(36), dp(36)
-#             theme_text_color: "Custom"
-#             text_color: utils.get_color_from_hex(root.color)
-    
-#     BoxLayout:
-#         orientation: 'vertical'
-#         spacing: dp(4)
-        
-#         MDLabel:
-#             text: root.value
-#             halign: 'center'
-#             font_style: 'H4'
-#             theme_text_color: "Custom"
-#             text_color: utils.get_color_from_hex(root.color)
-#             bold: True
-#             size_hint_y: None
-#             height: dp(40)
-        
-#         MDLabel:
-#             text: root.title
-#             halign: 'center'
-#             font_style: 'Subtitle1'
-#             size_hint_y: None
-#             height: dp(20)
-
-# <HealthConditionChip@MDBoxLayout>:
-#     orientation: 'horizontal'
-#     size_hint: None, None
-#     height: dp(32)
-#     width: self.minimum_width
-#     padding: [dp(8), 0, dp(4), 0]
-#     spacing: dp(4)
-#     md_bg_color: utils.get_color_from_hex('#E3F2FD')
-#     radius: [16]
-    
-#     condition: 'Condition'
-#     callback: None
-    
-#     MDLabel:
-#         text: root.condition
-#         size_hint: None, None
-#         size: self.texture_size
-#         pos_hint: {'center_y': 0.5}
-#         font_style: 'Body2'
-    
-#     MDIconButton:
-#         icon: 'close'
-#         size_hint: None, None
-#         size: dp(24), dp(24)
-#         pos_hint: {'center_y': 0.5}
-#         theme_text_color: "Custom"
-#         text_color: utils.get_color_from_hex('#406D96')
-#         on_release: root.callback() if root.callback else None
-
-# <ProfileScreen>:
-#     BoxLayout:
-#         orientation: 'vertical'
-        
-#         # Header
-#         Header:
-        
-#         # Profile content
-#         ScrollView:
-#             do_scroll_x: False
-#             bar_width: 0
-            
-#             BoxLayout:
-#                 orientation: 'vertical'
-#                 size_hint_y: None
-#                 height: self.minimum_height
-#                 padding: dp(16)
-#                 spacing: dp(16)
-                
-#                 # Enhanced Profile Avatar Section
-#                 MDCard:
-#                     orientation: 'vertical'
-#                     padding: dp(20)
-#                     size_hint_y: None
-#                     height: dp(180)
-#                     md_bg_color: 1, 1, 1, 1
-#                     radius: [15]
-#                     elevation: 2
-                    
-#                     BoxLayout:
-#                         orientation: 'horizontal'
-#                         height: dp(120)
-#                         size_hint_y: 0.5
-#                         spacing: dp(28)
-                        
-#                         BoxLayout:
-#                             orientation: 'vertical'
-#                             size_hint_x: 0.3
-                            
-#                             AsyncImage:
-#                                 source: "assets/avatar_placeholder.png"
-#                                 size_hint: None, None
-#                                 size: dp(80), dp(80)
-#                                 pos_hint: {'center_x': 0.5}
-#                                 radius: [40,]
-#                                 canvas.before:
-#                                     Color:
-#                                         rgba: utils.get_color_from_hex('#E3F2FD')
-#                                     Ellipse:
-#                                         pos: self.pos
-#                                         size: self.size
-#                         BoxLayout:
-#                             orientation: 'vertical'
-#                             size_hint_x: 0.7
-                            
-#                             MDLabel:
-#                                 text: root.full_name if root.full_name else "User"
-#                                 font_style: "H5"
-#                                 bold: True
-                            
-#                             MDLabel:
-#                                 text: root.email if root.email else "Not provided"
-#                                 font_style: "Body2"
-#                                 theme_text_color: "Secondary"
-                        
-                    
-#                     BoxLayout:
-#                         orientation: "horizontal"
-#                         size_hint_y: 0.5
-#                         spacing: dp(20)
-#                         MDRaisedButton:
-#                             text: "Edit profile"
-#                             on_release: root.toggle_edit_mode()
-
-#                         MDRaisedButton:
-#                             text: "Change your password"
-#                             on_release: root.change_password()
-                
-#                 # Health Stats Section
-#                 MDCard:
-#                     orientation: 'vertical'
-#                     padding: dp(16)
-#                     spacing: dp(12)
-#                     size_hint_y: None
-#                     height: self.minimum_height
-#                     md_bg_color: 1, 1, 1, 1
-#                     radius: [15]
-#                     elevation: 2
-                    
-#                     MDLabel:
-#                         text: "Health Activity"
-#                         font_style: "H6"
-#                         size_hint_y: None
-#                         height: dp(40)
-                    
-#                     GridLayout:
-#                         cols: 2
-#                         spacing: dp(12)
-#                         size_hint_y: None
-#                         height: dp(120)
-                        
-#                         HealthStatCard:
-#                             icon: 'pill'
-#                             title: 'Prescriptions'
-#                             value: str(root.prescription_count)
-#                             color: '#406D96'
-                        
-#                         HealthStatCard:
-#                             icon: 'text-recognition'
-#                             title: 'Total Scans'
-#                             value: str(root.scan_count)
-#                             color: '#4CAF50'
-                    
-#                     MDCard:
-#                         orientation: 'horizontal'
-#                         size_hint_y: None
-#                         height: dp(60)
-#                         padding: dp(16)
-#                         spacing: dp(16)
-#                         radius: [10]
-                        
-#                         MDIcon:
-#                             icon: 'calendar-clock'
-#                             size_hint: None, None
-#                             size: dp(28), dp(28)
-#                             pos_hint: {'center_y': 0.5}
-                        
-#                         BoxLayout:
-#                             orientation: 'vertical'
-#                             spacing: dp(4)
-                            
-#                             MDLabel:
-#                                 text: "Last Activity"
-#                                 font_style: 'Body2'
-#                                 theme_text_color: "Secondary"
-#                                 size_hint_y: None
-#                                 height: dp(16)
-                            
-#                             MDLabel:
-#                                 text: root.last_activity
-#                                 font_style: 'Subtitle1'
-#                                 size_hint_y: None
-#                                 height: dp(24)
-                
-#                 # Health Conditions Section
-#                 MDCard:
-#                     orientation: 'vertical'
-#                     padding: dp(16)
-#                     spacing: dp(12)
-#                     size_hint_y: None
-#                     height: self.minimum_height
-#                     md_bg_color: 1, 1, 1, 1
-#                     radius: [15]
-#                     elevation: 2
-                    
-#                     BoxLayout:
-#                         orientation: 'horizontal'
-#                         size_hint_y: None
-#                         height: dp(40)
-                        
-#                         MDLabel:
-#                             text: "Health Conditions"
-#                             font_style: "H6"
-#                             size_hint_y: None
-#                             height: dp(40)
-                        
-#                         Widget:
-#                             size_hint_x: 1
-                        
-#                         MDFlatButton:
-#                             text: "+ Add"
-#                             theme_text_color: "Custom"
-#                             text_color: utils.get_color_from_hex('#406D96')
-#                             pos_hint: {'center_y': 0.5}
-#                             on_release: root.add_health_condition()
-                    
-#                     MDBoxLayout:
-#                         id: health_conditions_container
-#                         orientation: 'horizontal'
-#                         size_hint_y: None
-#                         height: self.minimum_height if self.children else dp(50)
-#                         spacing: dp(8)
-#                         padding: [0, dp(10), 0, dp(10)]
-#                         adaptive_height: True
-#                         flex_wrap: 'wrap'
-                
-#                 # Notification Preferences
-#                 MDCard:
-#                     orientation: "vertical"
-#                     size_hint_y: None
-#                     height: self.minimum_height
-#                     md_bg_color: 1, 1, 1, 1
-#                     padding: [22, 0, 30, 0]
-#                     radius: [15]
-#                     elevation: 2
-                    
-#                     MDLabel:
-#                         text: "Notification Preferences"
-#                         font_style: "H6"
-#                         size_hint_y: None
-#                         height: dp(40)
-                    
-#                     NotificationSwitch:
-#                         icon: 'pill'
-#                         title: 'Medication Reminders'
-#                         subtitle: 'Get notified about your medications'
-#                         active: root.notify_medication
-#                         callback: lambda x: root.toggle_notification('medication')
-                    
-#                     NotificationSwitch:
-#                         icon: 'autorenew'
-#                         title: 'Refill Reminders'
-#                         subtitle: 'Get notified when prescriptions need refilling'
-#                         active: root.notify_refills
-#                         callback: lambda x: root.toggle_notification('refills')
-                    
-#                     NotificationSwitch:
-#                         icon: 'calendar'
-#                         title: 'Appointment Reminders'
-#                         subtitle: 'Get notified about upcoming appointments'
-#                         active: root.notify_appointments
-#                         callback: lambda x: root.toggle_notification('appointments')
-                
-#                 # Logout button at the bottom
-#                 MDRaisedButton:
-#                     text: "Logout"
-#                     pos_hint: {"center_x": 0.5}
-#                     md_bg_color: utils.get_color_from_hex('#F44336')
-#                     on_release: app.root.switch_screen("login")
-                
-#                 # Add some padding at the bottom
-#                 Widget:
-#                     size_hint_y: None
-#                     height: dp(20) 
-
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QGridLayout, QSpacerItem, QSizePolicy, QCheckBox, QGraphicsDropShadowEffect, QDialog, QLineEdit, QToolButton, QApplication
 )
-from PySide6.QtGui import QPixmap, QFont, QColor, QIcon
+from PySide6.QtGui import QPixmap, QFont, QColor, QIcon, QPainter
 from PySide6.QtCore import Qt, QSize
 from themes import PRIMARY_COLOR, SECONDARY_COLOR, BACKGROUND_COLOR, TEXT_COLOR, HINT_COLOR, SECONDARY_TEXT, FONT_FAMILY
-
-from PySide6.QtWidgets import QCheckBox
-from PySide6.QtGui import QPainter, QColor, QBrush, QPen
-from PySide6.QtCore import QRectF, Qt, QSize
-
+from views.components.switch import QSwitch
 class OverlayModal(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -515,7 +50,7 @@ class EditProfileModal(OverlayModal):
 
         # Label + Input for Tên
         name_label = QLabel("Tên")
-        name_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 500; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        name_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 600; font-family: {FONT_FAMILY}; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
         layout.addWidget(name_label)
         self.name_edit = QLineEdit(name)
         self.name_edit.setPlaceholderText("Tên")
@@ -524,7 +59,7 @@ class EditProfileModal(OverlayModal):
 
         # Label + Input for Email
         email_label = QLabel("Email")
-        email_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 500; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        email_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 600; font-family: {FONT_FAMILY}; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
         layout.addWidget(email_label)
         self.email_edit = QLineEdit(email)
         self.email_edit.setPlaceholderText("Email")
@@ -533,7 +68,7 @@ class EditProfileModal(OverlayModal):
 
         # Label + Input for Số điện thoại
         phone_label = QLabel("Số điện thoại")
-        phone_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 500; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        phone_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 600; font-family: {FONT_FAMILY}; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
         layout.addWidget(phone_label)
         self.phone_edit = QLineEdit(phone)
         self.phone_edit.setPlaceholderText("Số điện thoại")
@@ -578,26 +113,35 @@ class ChangePasswordModal(OverlayModal):
         title.setStyleSheet("font-size: 20px; font-weight: bold; color: #2F3A56; padding: 0px; border: none;")
         layout.addWidget(title, alignment=Qt.AlignHCenter)
 
-        # Label + Input for Mật khẩu hiện tại
+        # Current password
         current_label = QLabel("Mật khẩu hiện tại")
-        current_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 500; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        current_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 600; font-family: {FONT_FAMILY}; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
         layout.addWidget(current_label)
         self.current_pw = self._password_field("Mật khẩu hiện tại")
         layout.addLayout(self.current_pw['layout'])
+        self.current_pw_error = QLabel("")
+        self.current_pw_error.setStyleSheet("color: #e53935; font-size: 12px; margin-bottom: 0px; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        layout.addWidget(self.current_pw_error)
 
-        # Label + Input for Mật khẩu mới
+        # New password
         new_label = QLabel("Mật khẩu mới")
-        new_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 500; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        new_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 600; font-family: {FONT_FAMILY}; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
         layout.addWidget(new_label)
         self.new_pw = self._password_field("Mật khẩu mới")
         layout.addLayout(self.new_pw['layout'])
+        self.new_pw_error = QLabel("")
+        self.new_pw_error.setStyleSheet("color: #e53935; font-size: 12px; margin-bottom: 0px; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        layout.addWidget(self.new_pw_error)
 
-        # Label + Input for Xác nhận mật khẩu
+        # Confirm password
         confirm_label = QLabel("Xác nhận mật khẩu")
-        confirm_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 500; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        confirm_label.setStyleSheet(f"font-size: 14px; color: {TEXT_COLOR}; font-weight: 600; font-family: {FONT_FAMILY}; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
         layout.addWidget(confirm_label)
         self.confirm_pw = self._password_field("Xác nhận mật khẩu")
         layout.addLayout(self.confirm_pw['layout'])
+        self.confirm_pw_error = QLabel("")
+        self.confirm_pw_error.setStyleSheet("color: #e53935; font-size: 12px; margin-bottom: 0px; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+        layout.addWidget(self.confirm_pw_error)
 
         btn_row = QHBoxLayout()
         change_btn = QPushButton("Đổi mật khẩu")
@@ -632,60 +176,20 @@ class ChangePasswordModal(OverlayModal):
         return {'layout': layout, 'edit': edit, 'show_btn': show_btn}
 
     def accept(self):
+        # Clear previous errors
+        self.current_pw_error.setText("")
+        self.new_pw_error.setText("")
+        self.confirm_pw_error.setText("")
         if self.on_change:
             self.on_change(
                 self.current_pw['edit'].text(),
                 self.new_pw['edit'].text(),
-                self.confirm_pw['edit'].text()
+                self.confirm_pw['edit'].text(),
+                self  # pass modal instance for error display
             )
-        super().accept()
-
-class QSwitch(QCheckBox):
-    """A simple switch widget for PySide6."""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setTristate(False)
-        self.setMinimumSize(40, 22)
-        self.setMaximumHeight(22)
-        self.setCursor(Qt.PointingHandCursor)
-        self.setStyleSheet("QCheckBox { background: transparent; }")
-        self.setFocusPolicy(Qt.StrongFocus)
-
-    def sizeHint(self):
-        return QSize(40, 22)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        # Draw background
-        if self.isChecked():
-            bg_color = QColor("#4CAF50")
-        else:
-            bg_color = QColor("#ccc")
-        painter.setBrush(QBrush(bg_color))
-        painter.setPen(Qt.NoPen)
-        rect = QRectF(0, 0, 40, 22)
-        painter.drawRoundedRect(rect, 11, 11)
-        # Draw handle
-        handle_color = QColor("#fff")
-        painter.setBrush(QBrush(handle_color))
-        if self.isChecked():
-            handle_rect = QRectF(20, 2, 18, 18)
-        else:
-            handle_rect = QRectF(2, 2, 18, 18)
-        painter.drawEllipse(handle_rect)
-        # Draw focus border if focused
-        if self.hasFocus():
-            pen = QPen(QColor("#2196F3"))
-            pen.setWidth(2)
-            painter.setPen(pen)
-            painter.setBrush(Qt.NoBrush)
-            painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 11, 11)
-        painter.end()
-    
-    def hitButton(self, pos):
-        # Always return True so any click inside the widget toggles the switch
-        return True
+        # Only close if no error
+        if not (self.current_pw_error.text() or self.new_pw_error.text() or self.confirm_pw_error.text()):
+            super().accept()
 
 class ProfileScreenUI(QWidget):
     def __init__(self, parent=None):

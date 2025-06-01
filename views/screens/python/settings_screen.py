@@ -187,6 +187,7 @@ import json
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox
 from views.screens.pyside.settings_screen_ui import SettingsScreenUI
+from views.components.switch import QSwitch
 
 class SettingsScreen(SettingsScreenUI):
     go_to_home = Signal()
@@ -203,25 +204,25 @@ class SettingsScreen(SettingsScreenUI):
             try:
                 with open(self.settings_file, 'r') as f:
                     s = json.load(f)
-                self.flip_h_checkbox.setChecked(s.get('camera_flip_horizontal', False))
-                self.flip_v_checkbox.setChecked(s.get('camera_flip_vertical', False))
+                self.flip_h_switch.setChecked(s.get('camera_flip_horizontal', False))
+                self.flip_v_switch.setChecked(s.get('camera_flip_vertical', False))
                 self.res_combo.setCurrentText(s.get('camera_resolution', '640x480'))
                 self.quality_slider.setValue(s.get('camera_quality', 80))
-                self.auto_detect_checkbox.setChecked(s.get('auto_detect_documents', True))
-                self.save_original_checkbox.setChecked(s.get('save_original_images', False))
-                self.dark_mode_checkbox.setChecked(s.get('dark_mode', False))
+                self.auto_detect_switch.setChecked(s.get('auto_detect_documents', True))
+                self.save_original_switch.setChecked(s.get('save_original_images', False))
+                self.dark_mode_switch.setChecked(s.get('dark_mode', False))
             except Exception as e:
                 QMessageBox.warning(self, "Lỗi", f"Không thể tải cài đặt: {e}")
 
     def save_settings(self):
         s = {
-            'camera_flip_horizontal': self.flip_h_checkbox.isChecked(),
-            'camera_flip_vertical': self.flip_v_checkbox.isChecked(),
+            'camera_flip_horizontal': self.flip_h_switch.isChecked(),
+            'camera_flip_vertical': self.flip_v_switch.isChecked(),
             'camera_resolution': self.res_combo.currentText(),
             'camera_quality': self.quality_slider.value(),
-            'auto_detect_documents': self.auto_detect_checkbox.isChecked(),
-            'save_original_images': self.save_original_checkbox.isChecked(),
-            'dark_mode': self.dark_mode_checkbox.isChecked()
+            'auto_detect_documents': self.auto_detect_switch.isChecked(),
+            'save_original_images': self.save_original_switch.isChecked(),
+            'dark_mode': self.dark_mode_switch.isChecked()
         }
         try:
             with open(self.settings_file, 'w') as f:

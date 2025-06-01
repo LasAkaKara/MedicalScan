@@ -1,6 +1,7 @@
 from PySide6.QtCore import Signal
 from views.screens.pyside.home_screen_ui import HomeScreenUI
 from PySide6.QtWidgets import QMessageBox
+from services.database_service import DatabaseService
 
 class HomeScreen(HomeScreenUI):
     go_to_scan = Signal()
@@ -14,6 +15,7 @@ class HomeScreen(HomeScreenUI):
         super().__init__(parent)
         self.logout_btn.clicked.connect(self.handle_logout)
         self.avatar_label.mousePressEvent = lambda event: self.go_to_profile.emit()
+        self.db = DatabaseService()
 
         # Connect feature boxes to navigation
         if len(self.feature_boxes) >= 4:
@@ -21,6 +23,14 @@ class HomeScreen(HomeScreenUI):
             self.feature_boxes[1].clicked.connect(self.go_to_prescription.emit)
             self.feature_boxes[2].clicked.connect(self.go_to_calendar.emit)
             self.feature_boxes[3].clicked.connect(self.go_to_settings.emit)
+
+    def set_user(self, email):
+        """Load and display the current user's info on the home screen."""
+        user = self.db.get_user_by_email(email)
+        if user:
+            # Example: update greeting label and avatar if you have them
+            if hasattr(self, "greet_label"):
+                self.greet_label.setText(f"Hi, {user.get('full_name', 'user')}!")
 
     def handle_logout(self):
         reply = QMessageBox.question(self, "Logout", "Are you sure you want to logout?",

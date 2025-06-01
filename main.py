@@ -14,6 +14,7 @@ from views.screens.python.prescription_detail_screen import PrescriptionDetailSc
 class MedicalApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
+        self.current_user_email = None
         self.stack = QStackedWidget()
 
         # Instantiate screens
@@ -75,9 +76,13 @@ class MedicalApp(QApplication):
         self.stack.setCurrentWidget(self.signup_screen)
 
     def show_login(self):
+        self.current_user_email = None
         self.stack.setCurrentWidget(self.login_screen)
 
     def show_home(self, email=None):
+        if email:
+            self.current_user_email = email
+        self.home_screen.set_user(self.current_user_email)
         self.stack.setCurrentWidget(self.home_screen)
 
     def show_verification(self, email):
@@ -99,7 +104,7 @@ class MedicalApp(QApplication):
         pass
 
     def show_profile(self):
-        self.profile_screen.load_user_data()  # Refresh data each time
+        self.profile_screen.load_user_data(self.current_user_email)
         self.stack.setCurrentWidget(self.profile_screen)
     
     def show_settings(self):

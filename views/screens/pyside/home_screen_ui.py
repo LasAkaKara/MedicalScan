@@ -63,9 +63,9 @@ class HomeScreenUI(QWidget):
         # Greeting and subtitle
         greet_layout = QVBoxLayout()
         greet_layout.setSpacing(2)
-        greet_label = QLabel("Hi, user!")
-        greet_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {TEXT_COLOR}")
-        greet_layout.addWidget(greet_label)
+        self.greet_label = QLabel("Hi, user!")  # <-- Make it an attribute!
+        self.greet_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {TEXT_COLOR}")
+        greet_layout.addWidget(self.greet_label)
         subtitle_label = QLabel("Hãy nhớ uống thuốc nhé")
         subtitle_label.setStyleSheet(f"font-size: 13px; color: #406D96; color: {HINT_COLOR}")
         greet_layout.addWidget(subtitle_label)

@@ -459,6 +459,7 @@ class ProfileScreen(ProfileScreenUI):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.current_email = None
         self.back_btn.clicked.connect(self.handle_back_to_home)
         self.logout_btn.clicked.connect(self.handle_logout)
         self.edit_btn.clicked.connect(self.handle_edit)
@@ -466,11 +467,10 @@ class ProfileScreen(ProfileScreenUI):
         self.notif_medication.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc thuốc", state))
         self.notif_refills.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc tái đơn", state))
         self.db = DatabaseService()
-        self.user_id = 2  # Replace with actual user/session logic
-        self.load_user_data()
 
-    def load_user_data(self):
-        user = self.db.get_current_user()
+    def load_user_data(self, email):
+        self.current_email = email
+        user = self.db.get_user_by_email(email)
         if user:
             self.full_name_label.setText(user.get('full_name', 'User'))
             self.email_label.setText(user.get('email', 'Not provided'))
@@ -514,9 +514,57 @@ class ProfileScreen(ProfileScreenUI):
     
 
     def handle_change_password(self):
-        def change_callback(current, new, confirm):
-            # Validate and save password here
-            print("Current:", current, "New:", new, "Confirm:", confirm)
+        def change_callback(current, new, confirm, modal):
+            has_error = False
+            # Validation
+            if not current:
+                modal.current_pw_error.setText("Vui lòng nhập mật khẩu hiện tại.")
+                has_error = True
+                return
+            else:
+                modal.current_pw_error.setText("")
+            if not new:
+                modal.new_pw_error.setText("Vui lòng nhập mật khẩu mới.")
+                has_error = True
+                return
+            elif len(new) < 6:
+                modal.new_pw_error.setText("Mật khẩu mới phải có ít nhất 6 ký tự.")
+                has_error = True
+                return
+            else:
+                modal.new_pw_error.setText("")
+            if not confirm:
+                modal.confirm_pw_error.setText("Vui lòng xác nhận mật khẩu mới.")
+                has_error = True
+                return
+            elif new != confirm:
+                modal.confirm_pw_error.setText("Mật khẩu mới và xác nhận không khớp.")
+                has_error = True
+                return
+            else:
+                modal.confirm_pw_error.setText("")
+
+            if has_error:
+                return
+
+            # Verify current password
+            if not self.current_email:
+                modal.current_pw_error.setText("Không tìm thấy người dùng hiện tại.")
+                return
+            if not self.db.verify_password(self.current_email, current):
+                modal.current_pw_error.setText("Mật khẩu hiện tại không đúng.")
+                return
+
+            # Update password
+            if self.db.update_password(self.current_email, new):
+                # Optionally show a toast/snackbar here
+                modal.current_pw_error.setStyleSheet("color: #43a047; font-size: 12px; border: none; padding: 0px; margin: 0px; min-width: 0px; min-height: 0px;")
+                modal.current_pw_error.setText("Đổi mật khẩu thành công!")
+                modal.new_pw_error.setText("")
+                modal.confirm_pw_error.setText("")
+            else:
+                modal.current_pw_error.setText("Không thể đổi mật khẩu. Vui lòng thử lại.")
+
         dlg = ChangePasswordModal(change_callback, self)
         dlg.exec()
 

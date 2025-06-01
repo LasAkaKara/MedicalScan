@@ -489,6 +489,19 @@ class DatabaseService:
         finally:
             cursor.close()
             conn.close()
+    
+    def get_user_by_email(self, email):
+        conn = self.connect()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            return user
+        finally:
+            cursor.close()
+            conn.close()
 
     def get_current_user(self):
         """Get the current user from the database (placeholder for session management)"""
