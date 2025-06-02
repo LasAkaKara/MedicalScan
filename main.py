@@ -1,5 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication, QStackedWidget
+from PySide6.QtGui import QIcon
 from views.screens.python.login_screen import LoginScreen
 from views.screens.python.signup_screen import SignupScreen
 from views.screens.python.home_screen import HomeScreen
@@ -74,6 +75,10 @@ class MedicalApp(QApplication):
         self.login_screen.go_to_reset_password.connect(self.show_reset_password)
         self.reset_password_screen.go_to_login.connect(self.show_login)
 
+
+        # Set window title and icon
+        self.stack.setWindowTitle("MedicalScan")  # Change to your desired title
+        self.stack.setWindowIcon(QIcon("assets/app-logo.png"))
         self.stack.setCurrentWidget(self.login_screen)
         self.stack.setFixedSize(400, 700)
         self.stack.show()

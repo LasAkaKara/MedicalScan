@@ -37,11 +37,23 @@ class LoginScreen(LoginScreenUI):
         self.is_submitting = False
 
     def handle_forgot_password(self):
-        email = self.email_input.text()
+        email = self.email_input.text().strip()
         if not email:
             self.show_error("Vui lòng nhập email để đặt lại mật khẩu")
             return
-        self.go_to_reset_password.emit(email)
+
+        # Validate email format
+        if not self.auth_controller.validate_email(email):
+            self.show_error("Email không hợp lệ")
+            return
+
+        # Check if email exists and send reset code
+        success, message = self.auth_controller.send_reset_password_code(email)
+        if success:
+            self.show_error("")  # Clear any previous error
+            self.go_to_reset_password.emit(email)
+        else:
+            self.show_error(message)
 
     def validate_login(self):
         if self.is_submitting:

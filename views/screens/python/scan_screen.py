@@ -868,7 +868,7 @@ class ScanScreen(ScanScreenUI):
         self.current_image = None
         self.prescriptions_dir = 'prescriptions'
         os.makedirs(self.prescriptions_dir, exist_ok=True)
-
+        
     # --- Navigation and UI state ---
     def handle_back_to_home(self):
         self.stop_camera()

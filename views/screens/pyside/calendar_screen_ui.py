@@ -83,7 +83,7 @@ class CalendarScreenUI(QWidget):
 
         self.month_label = QLabel()
         self.month_label.setAlignment(Qt.AlignCenter)
-        self.month_label.setStyleSheet("font-size: 18px; font-weight: 600; color: #2F3A56; min-width: 120px; border: none;")
+        self.month_label.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {TEXT_COLOR}; min-width: 120px; border: none;")
         month_nav.addWidget(self.month_label, stretch=1)
 
         self.next_month_btn = QToolButton()
