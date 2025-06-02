@@ -858,6 +858,9 @@ class ScanScreen(ScanScreenUI):
         self.back_btn.clicked.connect(self.handle_back_to_home)
         self.capture_btn.clicked.connect(self.handle_capture)
         self.upload_btn.clicked.connect(self.handle_upload)
+        self.retake_btn.clicked.connect(self.handle_retake)
+        self.confirm_btn.clicked.connect(self.handle_confirm)
+        self.save_btn.clicked.connect(self.handle_save)
 
         # Camera and image state
         self.camera_initialized = False
@@ -872,6 +875,10 @@ class ScanScreen(ScanScreenUI):
     # --- Navigation and UI state ---
     def handle_back_to_home(self):
         self.stop_camera()
+        self.camera_label.clear()
+        self.current_image = None
+        self.show_capture_controls()
+        self.reset_camera_label_drag()
         self.go_to_home.emit()
 
     def handle_settings(self):
@@ -940,32 +947,104 @@ class ScanScreen(ScanScreenUI):
         )
 
     # --- Capture and upload ---
+    def show_capture_controls(self):
+        # Show floating capture/upload buttons, hide bottom controls
+        self.capture_btn.show()
+        self.upload_btn.show()
+        self.bottom_controls.hide()
+
+    def show_post_capture_controls(self, show_save=True):
+        # Hide floating capture/upload buttons, show bottom controls
+        self.capture_btn.hide()
+        self.upload_btn.hide()
+        self.bottom_controls.show()
+        self.retake_btn.show()
+        self.confirm_btn.show()
+        self.save_btn.setVisible(show_save)
+
     def handle_capture(self):
         if self.frame is not None:
-            self.current_image = self.frame.copy()
-            self.stop_camera()  # <--- Stop camera so preview doesn't overwrite
+            # Flip horizontally to match preview
+            captured = cv2.flip(self.frame, 1)
+            self.current_image = captured
+            self.stop_camera()
             self.display_image(self.current_image)
-            self.enter_crop_mode()
+            self.show_post_capture_controls(show_save=True)
         else:
             QMessageBox.warning(self, "Lỗi", "Không có khung hình để chụp.")
     
-    def handle_recapture(self):
-        self.show_capture_controls()
-        self.camera_label.clear()
-        self.current_image = None
-        self.start_camera()
-
     def handle_upload(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Chọn ảnh", "", "Images (*.png *.jpg *.jpeg)")
         if file_path:
             image = cv2.imread(file_path)
             if image is not None:
                 self.current_image = image
-                self.stop_camera()  # <--- Stop camera so preview doesn't overwrite
+                self.stop_camera()
                 self.display_image(self.current_image)
-                self.enter_crop_mode()
+                self.show_post_capture_controls(show_save=False)
+                # Optionally: enable drag/move for camera_label here
+                self.enable_image_drag()
             else:
                 QMessageBox.warning(self, "Lỗi", "Không thể mở ảnh.")
+    
+    def handle_retake(self):
+        self.camera_label.clear()
+        self.current_image = None
+        self.show_capture_controls()
+        self.reset_camera_label_drag()
+        self.start_camera()
+
+    def handle_save(self):
+        if self.current_image is not None:
+            timestr = time.strftime("%Y%m%d_%H%M%S")
+            filename = f"prescription_{timestr}.png"
+            filepath = os.path.join(self.prescriptions_dir, filename)
+            cv2.imwrite(filepath, self.current_image)
+            QMessageBox.information(self, "Thành công", f"Đã lưu vào {filepath}")
+
+    def handle_confirm(self):
+        # Your confirm logic (e.g. crop, OCR, etc.)
+        QMessageBox.information(self, "Xác nhận", "Đã xác nhận ảnh đơn thuốc!")
+
+    def enable_image_drag(self):
+        # Save original handlers if not already saved
+        if not hasattr(self.camera_label, "_orig_mousePressEvent"):
+            self.camera_label._orig_mousePressEvent = self.camera_label.mousePressEvent
+        if not hasattr(self.camera_label, "_orig_mouseMoveEvent"):
+            self.camera_label._orig_mouseMoveEvent = self.camera_label.mouseMoveEvent
+        if not hasattr(self.camera_label, "_orig_mouseReleaseEvent"):
+            self.camera_label._orig_mouseReleaseEvent = self.camera_label.mouseReleaseEvent
+
+        self.camera_label.setCursor(Qt.OpenHandCursor)
+        self.camera_label.mousePressEvent = self._drag_start
+        self.camera_label.mouseMoveEvent = self._drag_move
+        self.camera_label.mouseReleaseEvent = self._drag_end
+        self._drag_pos = None
+    
+    def reset_camera_label_drag(self):
+        # Restore original event handlers if they exist
+        if hasattr(self.camera_label, "_orig_mousePressEvent"):
+            self.camera_label.mousePressEvent = self.camera_label._orig_mousePressEvent
+        if hasattr(self.camera_label, "_orig_mouseMoveEvent"):
+            self.camera_label.mouseMoveEvent = self.camera_label._orig_mouseMoveEvent
+        if hasattr(self.camera_label, "_orig_mouseReleaseEvent"):
+            self.camera_label.mouseReleaseEvent = self.camera_label._orig_mouseReleaseEvent
+        self.camera_label.setCursor(Qt.ArrowCursor)
+        self.camera_label.move(0, 0)
+
+    def _drag_start(self, event):
+        if event.button() == Qt.LeftButton:
+            self._drag_pos = event.pos()
+            self.camera_label.setCursor(Qt.ClosedHandCursor)
+
+    def _drag_move(self, event):
+        if self._drag_pos is not None:
+            delta = event.pos() - self._drag_pos
+            self.camera_label.move(self.camera_label.pos() + delta)
+
+    def _drag_end(self, event):
+        self._drag_pos = None
+        self.camera_label.setCursor(Qt.OpenHandCursor)
 
     # --- Crop mode ---
     def enter_crop_mode(self):

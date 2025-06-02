@@ -521,50 +521,82 @@ class MedicineRow(QFrame):
             background: #FCFCFD;
             border-radius: 8px;
             border: 1px solid #EAECF0;
+            font-family: Roboto, sans-serif;
         """)
 
-        # Main layout for the row with uniform padding
-        main_layout = QHBoxLayout(self)
+        main_layout = QGridLayout(self)
         main_layout.setContentsMargins(12, 8, 12, 8)
-        main_layout.setAlignment(Qt.AlignVCenter)
+        main_layout.setHorizontalSpacing(8)
+        main_layout.setVerticalSpacing(2)
 
-        # Left: Name and info below
-        name_info_widget = QWidget()
-        name_info_layout = QVBoxLayout(name_info_widget)
-        name_info_layout.setContentsMargins(0, 0, 0, 0)
-        name_info_layout.setSpacing(8)
-
+        # --- Top row ---
         name_label = QLabel(name)
-        name_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; font-weight: bold; color: #344054; border: none; margin-bottom: 0px;")
-        name_info_layout.addWidget(name_label)
+        name_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; font-weight: bold; color: #344054; border: none;")
+        name_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        main_layout.addWidget(name_label, 0, 0, 1, 6, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
-        # Info row: type, quantity, times
-        info_row = QHBoxLayout()
-        info_row.setContentsMargins(0, 0, 0, 0)
-        info_row.setSpacing(4)
+        # Loại
+        type_desc = QLabel("Loại:")
+        type_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        type_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(type_desc, 1, 0, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
-        type_label = QLabel(med_type)
-        type_label.setStyleSheet("font-size: 13px; color: #406D96; border: none; margin-right: 0px;")
-        info_row.addWidget(type_label)
+        type_value = QLabel(med_type)
+        type_value.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
+        type_value.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        main_layout.addWidget(type_value, 1, 1, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
-        qty_label = QLabel(f"{quantity} viên")
-        qty_label.setStyleSheet("font-size: 13px; color: #406D96; border: none; margin-right: 0px;")
-        info_row.addWidget(qty_label)
+        # Sáng
+        sang_desc = QLabel("Sáng:")
+        sang_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        sang_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(sang_desc, 1, 2, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
-        times_label = QLabel(", ".join(times))
-        times_label.setStyleSheet("font-size: 13px; color: #406D96; border: none;")
-        info_row.addWidget(times_label)
+        sang_val = QLabel("1" if "Sáng" in times else "0")
+        sang_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
+        sang_val.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(sang_val, 1, 3, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
-        name_info_layout.addLayout(info_row)
+        # Trưa
+        trua_desc = QLabel("Trưa:")
+        trua_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        trua_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(trua_desc, 1, 4, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
-        main_layout.addWidget(name_info_widget, 4, alignment=Qt.AlignVCenter)
-        main_layout.addStretch()
+        trua_val = QLabel("1" if "Trưa" in times else "0")
+        trua_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
+        trua_val.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(trua_val, 1, 5, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        # Tối
+        toi_desc = QLabel("Tối:")
+        toi_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        toi_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(toi_desc, 1, 6, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        toi_val = QLabel("1" if "Tối" in times else "0")
+        toi_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
+        toi_val.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(toi_val, 1, 7, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        # SL (quantity) and edit icon in the last column, spanning both rows
+        qty_desc = QLabel("SL:")
+        qty_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        qty_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(qty_desc, 0, 6, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignRight)
+
+        qty_label = QLabel(str(quantity))
+        qty_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #406D96; border: none;")
+        qty_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
+        main_layout.addWidget(qty_label, 0, 7, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
         self.edit_btn = QToolButton()
         self.edit_btn.setIcon(QIcon("assets/edit.png"))
         self.edit_btn.setStyleSheet("border: none;")
         self.edit_btn.setToolTip("Chỉnh sửa thuốc")
-        main_layout.addWidget(self.edit_btn, 0, alignment=Qt.AlignVCenter)
+        self.edit_btn.setIconSize(QSize(24, 24))
+        self.edit_btn.setFixedSize(32, 48)
+        main_layout.addWidget(self.edit_btn, 0, 8, 2, 1, alignment=Qt.AlignVCenter | Qt.AlignRight)
 
 class PrescriptionCard(QFrame):
     def __init__(self, prescription, parent=None):

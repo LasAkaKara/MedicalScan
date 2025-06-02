@@ -1,6 +1,7 @@
-from PySide6.QtWidgets import QWidget, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QHBoxLayout
 from PySide6.QtGui import QPixmap, QIcon, QPainter, QPen, QColor, QRegion, QPainterPath
 from PySide6.QtCore import Qt, QSize, QRect
+from themes import PRIMARY_COLOR
 
 class ScanZoneOverlay(QWidget):
     def __init__(self, parent=None, vertical_offset=0):
@@ -126,14 +127,70 @@ class ScanScreenUI(QWidget):
         self.back_btn.move(16, 16)
         self.back_btn.raise_()
 
-        # Capture and upload buttons (bottom center)
-        self.capture_btn = IPhoneCaptureButton(self)
+        # --- Bottom background for capture/upload buttons ---
+        self.bottom_bg = QWidget(self)
+        self.bottom_bg.setGeometry(0, self.height() - 100, self.width(), 100)
+        self.bottom_bg.setStyleSheet("background: rgba(0,0,0,0.7); border-top-left-radius: 24px; border-top-right-radius: 24px;")
 
-        self.upload_btn = QPushButton(self)
+        # Layout for bottom_bg
+        self.bottom_bg_layout = QHBoxLayout(self.bottom_bg)
+        self.bottom_bg_layout.setContentsMargins(16, 0, 16, 0)  # Reduce margins
+        self.bottom_bg_layout.setSpacing(24)
+
+        # Capture and upload buttons
+        self.capture_btn = IPhoneCaptureButton(self.bottom_bg)
+        self.upload_btn = QPushButton(self.bottom_bg)
         self.upload_btn.setIcon(QIcon("assets/copy-image.png"))
         self.upload_btn.setIconSize(QSize(36, 36))
         self.upload_btn.setFixedSize(56, 56)
         self.upload_btn.setStyleSheet("border-radius: 28px; background: #7FACB7;")
+
+        # Add buttons to layout: center capture, right upload
+        self.bottom_bg_layout.addStretch()  # Center capture button
+        self.bottom_bg_layout.addStretch()
+        self.bottom_bg_layout.addWidget(self.capture_btn, alignment=Qt.AlignVCenter)
+        self.bottom_bg_layout.addStretch()
+        self.bottom_bg_layout.addWidget(self.upload_btn, alignment=Qt.AlignVCenter | Qt.AlignRight)
+
+        # --- Bottom controls ---
+        self.bottom_controls = QWidget(self)
+        self.bottom_controls.setGeometry(0, self.height() - 100, self.width(), 120)
+        self.bottom_layout = QHBoxLayout(self.bottom_controls)
+        self.bottom_layout.setContentsMargins(24, 0, 24, 0)
+        self.bottom_layout.setSpacing(24)
+        self.bottom_controls.setStyleSheet("background: rgba(0,0,0,0.7); border-top-left-radius: 24px; border-top-right-radius: 24px;")
+        self.bottom_controls.hide()
+
+        # Back button (hidden by default)
+        self.retake_btn = QPushButton(self)
+        self.retake_btn.setIcon(QIcon("assets/arrow-circle-right.png"))
+        self.retake_btn.setIconSize(QSize(40, 40))
+        self.retake_btn.setFixedSize(56, 56)
+        self.retake_btn.setStyleSheet("border-radius: 28px; background: transparent;")
+        self.retake_btn.hide()
+
+        # Confirm button (hidden by default)
+        self.confirm_btn = QPushButton(self)
+        self.confirm_btn.setIcon(QIcon("assets/check.png"))
+        self.confirm_btn.setIconSize(QSize(48, 48))
+        self.confirm_btn.setFixedSize(72, 72)
+        self.confirm_btn.setStyleSheet(f"border-radius: 28px; background: {PRIMARY_COLOR}; color: white;")
+        self.confirm_btn.hide()
+
+        # Save button (hidden by default)
+        self.save_btn = QPushButton(self)
+        self.save_btn.setIcon(QIcon("assets/save.png"))
+        self.save_btn.setIconSize(QSize(40, 40))
+        self.save_btn.setFixedSize(56, 56)
+        self.save_btn.setStyleSheet("border-radius: 28px; background: transparent; color: white;")
+        self.save_btn.hide()
+
+        # Add to layout
+        self.bottom_layout.addWidget(self.retake_btn)
+        self.bottom_layout.addStretch()
+        self.bottom_layout.addWidget(self.confirm_btn)
+        self.bottom_layout.addStretch()
+        self.bottom_layout.addWidget(self.save_btn)
 
         self.capture_btn.raise_()
         self.upload_btn.raise_()
@@ -141,8 +198,21 @@ class ScanScreenUI(QWidget):
     def resizeEvent(self, event):
         self.camera_label.setGeometry(0, 0, self.width(), self.height())
         self.scan_zone_overlay.setGeometry(0, 0, self.width(), self.height())
-        btn_y = self.height() - 100
-        btn_x = self.width() // 2 - self.capture_btn.width() // 2
-        self.capture_btn.move(btn_x, btn_y)
-        self.upload_btn.move(btn_x + self.capture_btn.width() + 24, btn_y + (self.capture_btn.height() - self.upload_btn.height()) // 2)
+        self.bottom_bg.setGeometry(0, self.height() - 100, self.width(), 100)
+        self.bottom_controls.setGeometry(0, self.height() - 100, self.width(), 100)
         super().resizeEvent(event)
+
+    # Utility methods for logic class:
+    def show_capture_controls(self):
+        self.capture_btn.show()
+        self.upload_btn.show()
+        self.capture_btn.raise_()
+        self.upload_btn.raise_()
+        self.bottom_controls.hide()
+        self.reset_camera_label_drag()
+
+    def show_bottom_controls(self):
+        self.capture_btn.hide()
+        self.upload_btn.hide()
+        self.bottom_controls.show()
+        self.bottom_controls.raise_()
