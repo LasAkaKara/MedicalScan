@@ -18,11 +18,17 @@ class OverlayModal(QDialog):
         layout.addWidget(self.card, alignment=Qt.AlignCenter)
 
     def showEvent(self, event):
-        # Make the dialog cover the whole screen
-        screen = self.screen() or QApplication.primaryScreen()
-        if screen:
-            screen_geometry = screen.geometry()
-            self.setGeometry(screen_geometry)
+        # Make the dialog cover only the parent window, not the whole screen
+        if self.parent():
+            parent_geom = self.parent().geometry()
+            parent_pos = self.parent().mapToGlobal(parent_geom.topLeft())
+            self.setGeometry(parent_pos.x(), parent_pos.y(), parent_geom.width(), parent_geom.height())
+        else:
+            # fallback: center on primary screen
+            screen = self.screen() or QApplication.primaryScreen()
+            if screen:
+                screen_geometry = screen.geometry()
+                self.setGeometry(screen_geometry)
         super().showEvent(event)
 
     def paintEvent(self, event):

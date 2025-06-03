@@ -568,7 +568,5 @@ class ProfileScreen(ProfileScreenUI):
         dlg = ChangePasswordModal(change_callback, self)
         dlg.exec()
 
-    def handle_notif_change(self, label, state):
-        # Do something when the switch is toggled
-        print(f"{label}: {'Bật' if state == Qt.Checked else 'Tắt'}")
-        # Save to DB or update preferences here if needed
+    def handle_notif_change(self, label, is_checked):
+        print(f"{label}: {'Bật' if is_checked else 'Tắt'}")

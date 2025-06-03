@@ -285,10 +285,12 @@ from services.database_service import DatabaseService
 class PrescriptionScreen(PrescriptionScreenUI):
     go_to_add_prescription = Signal()
     go_to_home = Signal()
+    go_to_scan = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.add_btn.clicked.connect(self.handle_add_prescription)
+        self.scan_btn.clicked.connect(self.handle_scan)
+        self.add_manual_btn.clicked.connect(self.handle_add_prescription)
         self.search_input.textChanged.connect(self.search_prescriptions)
         self.back_btn.clicked.connect(self.handle_back)
         self.db = DatabaseService()
@@ -328,6 +330,9 @@ class PrescriptionScreen(PrescriptionScreenUI):
 
     def handle_add_prescription(self):
         self.go_to_add_prescription.emit()
+    
+    def handle_scan(self):
+        self.go_to_scan.emit()
 
     def handle_back(self):
         self.go_to_home.emit()

@@ -12,6 +12,7 @@ from views.screens.python.profile_screen import ProfileScreen
 from views.screens.python.settings_screen import SettingsScreen
 from views.screens.python.prescription_detail_screen import PrescriptionDetailScreen
 from views.screens.python.calendar_screen import CalendarScreen
+from views.screens.python.add_prescription_screen import AddPrescriptionScreen
 
 class MedicalApp(QApplication):
     def __init__(self, argv):
@@ -31,6 +32,7 @@ class MedicalApp(QApplication):
         self.settings_screen = SettingsScreen()
         self.prescription_detail_screen = PrescriptionDetailScreen()
         self.calendar_screen = CalendarScreen()
+        self.add_prescription_screen = AddPrescriptionScreen()
 
         # Add screens to stack
         self.stack.addWidget(self.login_screen)
@@ -44,6 +46,7 @@ class MedicalApp(QApplication):
         self.stack.addWidget(self.settings_screen)
         self.stack.addWidget(self.prescription_detail_screen)
         self.stack.addWidget(self.calendar_screen)
+        self.stack.addWidget(self.add_prescription_screen)
 
 
         # Connect navigation signals
@@ -64,6 +67,9 @@ class MedicalApp(QApplication):
         self.prescription_detail_screen.go_to_history.connect(self.show_prescription)
         self.home_screen.go_to_calendar.connect(self.show_calendar)
         self.calendar_screen.go_to_home.connect(self.show_home)
+        self.prescription_screen.go_to_add_prescription.connect(self.show_add_prescription)
+        self.prescription_screen.go_to_scan.connect(self.show_scan)
+        self.add_prescription_screen.go_to_prescription.connect(self.show_prescription)
 
 
         # Verification navigation
@@ -128,6 +134,9 @@ class MedicalApp(QApplication):
     
     def show_calendar(self):
         self.stack.setCurrentWidget(self.calendar_screen)
+
+    def show_add_prescription(self):
+        self.stack.setCurrentWidget(self.add_prescription_screen)
 
 
 

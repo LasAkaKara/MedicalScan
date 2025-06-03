@@ -901,10 +901,71 @@ class PrescriptionScreenUI(QWidget):
         self._sample_card = PrescriptionCard(sample_prescription)
         self.prescriptions_layout.addWidget(self._sample_card)
 
-        # Add button
-        self.add_btn = QPushButton("Thêm đơn thuốc")
-        self.add_btn.setStyleSheet("background: #406D96; color: white; font-size: 16px; border-radius: 8px; padding: 10px; margin-top: 16px; margin-bottom: 16px;")
-        inner_layout.addWidget(self.add_btn)
+        # --- Bottom action bar container ---
+        action_bar_container = QWidget()
+        action_bar_container.setStyleSheet("""
+            background: transparent;
+        """)
+        action_bar_layout = QHBoxLayout(action_bar_container)
+        action_bar_layout.setContentsMargins(0, 16, 0, 16)
+        action_bar_layout.setSpacing(8)
 
-        # Add the inner_widget to the outer_layout
+        # Long scan button
+        self.scan_btn = QPushButton()
+        self.scan_btn.setText("  Quét đơn thuốc")
+        self.scan_btn.setIcon(QIcon("assets/camera.png"))
+        self.scan_btn.setIconSize(QSize(28, 28))
+        self.scan_btn.setStyleSheet("""
+            QPushButton {
+                background: #406D96;
+                color: white;
+                font-size: 17px;
+                font-weight: bold;
+                border-radius: 14px;
+                padding: 16px 0px;
+            }
+            QPushButton:hover {
+                background: #27496d;
+            }
+        """)
+        self.scan_btn.setMinimumHeight(56)
+        self.scan_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Add shadow to scan_btn
+        scan_shadow = QGraphicsDropShadowEffect(self.scan_btn)
+        scan_shadow.setBlurRadius(18)
+        scan_shadow.setOffset(0, 4)
+        scan_shadow.setColor(Qt.gray)
+        self.scan_btn.setGraphicsEffect(scan_shadow)
+
+        # Plus (add manually) button
+        self.add_manual_btn = QPushButton()
+        self.add_manual_btn.setIcon(QIcon("assets/plus.png"))
+        self.add_manual_btn.setIconSize(QSize(28, 28))
+        self.add_manual_btn.setFixedSize(64, 64)
+        self.add_manual_btn.setStyleSheet("""
+            QPushButton {
+                background: #fff;
+                border-radius: 28px;
+                color: #406D96;
+            }
+            QPushButton:hover {
+                background: #e3eaf6;
+            }
+        """)
+
+        # Add shadow to add_manual_btn
+        add_shadow = QGraphicsDropShadowEffect(self.add_manual_btn)
+        add_shadow.setBlurRadius(18)
+        add_shadow.setOffset(0, 4)
+        add_shadow.setColor(Qt.gray)
+        self.add_manual_btn.setGraphicsEffect(add_shadow)
+
+        # Add to action bar layout
+        action_bar_layout.addWidget(self.scan_btn, stretch=1)
+        action_bar_layout.addSpacing(4)
+        action_bar_layout.addWidget(self.add_manual_btn, stretch=0)
+
+        # Add the action bar container to the OUTER layout (not inner_layout)
         outer_layout.addWidget(inner_widget)
+        outer_layout.addWidget(action_bar_container)
