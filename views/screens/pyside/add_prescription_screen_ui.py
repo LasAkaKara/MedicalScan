@@ -48,6 +48,55 @@ class MedicineForm(QFrame):
         """)
         main_layout.addWidget(self.name_input)
 
+        # Type
+        type_label = QLabel("Loại thuốc")
+        type_label.setStyleSheet("font-size: 15px; font-weight: 600; color: #406D96; margin-bottom: 2px; border: none;")
+        main_layout.addWidget(type_label)
+        self.type_input = QComboBox()
+        self.type_input.addItems(["Viên", "Ống", "Gói", "Khác"])
+        self.type_input.setStyleSheet("""
+            QComboBox {
+            font-size: 15px; border-radius: 8px; padding: 6px 32px 6px 8px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QComboBox:focus {
+            border: 1.5px solid #406D96;
+            }
+            QComboBox::drop-down {
+            subcontrol-origin: padding;
+            subcontrol-position: top right;
+            width: 24px;
+            border: none;
+            }
+            QComboBox::down-arrow {
+            image: url(assets/down-arrow.png);
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            }
+        """)
+        main_layout.addWidget(self.type_input)
+
+        # Strength
+        strength_label = QLabel("Hàm lượng")
+        strength_label.setStyleSheet("font-size: 15px; font-weight: 600; color: #406D96; margin-bottom: 2px; border: none;")
+        main_layout.addWidget(strength_label)
+        self.strength_input = QLineEdit()
+        self.strength_input.setPlaceholderText("Nhập hàm lượng")
+        self.strength_input.setMinimumWidth(80)
+        self.strength_input.setStyleSheet("""
+            QLineEdit {
+            font-size: 15px; border-radius: 8px; padding: 6px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QLineEdit:focus {
+            border: 1.5px solid #406D96;
+            }
+        """)
+        main_layout.addWidget(self.strength_input)
+
         # Total quantity label and input (NEW FIELD)
         total_qty_label = QLabel("Tổng số lượng thuốc")
         total_qty_label.setStyleSheet("font-size: 15px; font-weight: 600; color: #406D96; margin-bottom: 2px; border: none;")
@@ -155,15 +204,22 @@ class MedicineForm(QFrame):
         main_layout.addLayout(row3)
 
     def get_data(self):
+        usage_time = []
+        if self.morning_cb.isChecked():
+            usage_time.append("Sáng")
+        if self.afternoon_cb.isChecked():
+            usage_time.append("Trưa")
+        if self.evening_cb.isChecked():
+            usage_time.append("Tối")
         return {
             "medicine_name": self.name_input.text(),
+            "type": self.type_input.currentText(),
+            "strength": self.strength_input.text(),
             "total_quantity": self.total_qty_input.text(),
             "quantity_per_time": self.qty_input.text(),
-            "usage_time": [
-                t for t, cb in zip(["sáng", "trưa", "tối"], [self.morning_cb, self.afternoon_cb, self.evening_cb]) if cb.isChecked()
-            ],
             "duration_days": self.duration_input.text(),
-            "usage_instruction": self.usage_input.text()
+            "usage_instruction": self.usage_input.text(),
+            "usage_time": usage_time  # Now just a list of checked times
         }
 
 class AddPrescriptionScreenUI(QWidget):
@@ -233,6 +289,126 @@ class AddPrescriptionScreenUI(QWidget):
             }
         """)
         form_layout.addWidget(self.name_input)
+
+        # Patient name
+        patient_label = QLabel("Họ tên bệnh nhân")
+        patient_label.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {TEXT_COLOR}; margin-bottom: 2px; border: none;")
+        form_layout.addWidget(patient_label)
+        self.patient_input = QLineEdit()
+        self.patient_input.setPlaceholderText("Nhập họ tên bệnh nhân")
+        self.patient_input.setStyleSheet("""
+            QLineEdit {
+            font-size: 15px; border-radius: 8px; padding: 8px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QLineEdit:focus {
+            border: 1.5px solid #406D96;
+            }
+        """)
+        form_layout.addWidget(self.patient_input)
+
+        # Doctor name
+        doctor_label = QLabel("Bác sĩ")
+        doctor_label.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {TEXT_COLOR}; margin-bottom: 2px; border: none;")
+        form_layout.addWidget(doctor_label)
+        self.doctor_input = QLineEdit()
+        self.doctor_input.setPlaceholderText("Nhập tên bác sĩ")
+        self.doctor_input.setStyleSheet("""
+            QLineEdit {
+            font-size: 15px; border-radius: 8px; padding: 8px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QLineEdit:focus {
+            border: 1.5px solid #406D96;
+            }
+        """)
+        form_layout.addWidget(self.doctor_input)
+
+        # Age
+        age_label = QLabel("Tuổi")
+        age_label.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {TEXT_COLOR}; margin-bottom: 2px; border: none;")
+        form_layout.addWidget(age_label)
+        self.age_input = QLineEdit()
+        self.age_input.setPlaceholderText("Nhập tuổi")
+        self.age_input.setStyleSheet("""
+            QLineEdit {
+            font-size: 15px; border-radius: 8px; padding: 8px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QLineEdit:focus {
+            border: 1.5px solid #406D96;
+            }
+        """)
+        form_layout.addWidget(self.age_input)
+
+        # Weight
+        weight_label = QLabel("Cân nặng")
+        weight_label.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {TEXT_COLOR}; margin-bottom: 2px; border: none;")
+        form_layout.addWidget(weight_label)
+        self.weight_input = QLineEdit()
+        self.weight_input.setPlaceholderText("Nhập cân nặng (ví dụ: 58kg)")
+        self.weight_input.setStyleSheet("""
+            QLineEdit {
+            font-size: 15px; border-radius: 8px; padding: 8px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QLineEdit:focus {
+            border: 1.5px solid #406D96;
+            }
+        """)
+        form_layout.addWidget(self.weight_input)
+
+        # Gender
+        gender_label = QLabel("Giới tính")
+        gender_label.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {TEXT_COLOR}; margin-bottom: 2px; border: none;")
+        form_layout.addWidget(gender_label)
+        self.gender_input = QComboBox()
+        self.gender_input.addItems(["Nam", "Nữ", "Khác"])
+        self.gender_input.setStyleSheet("""
+            QComboBox {
+            font-size: 15px; border-radius: 8px; padding: 8px 36px 8px 8px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QComboBox:focus {
+            border: 1.5px solid #406D96;
+            }
+            QComboBox::drop-down {
+            subcontrol-origin: padding;
+            subcontrol-position: top right;
+            width: 28px;
+            border: none;
+            }
+            QComboBox::down-arrow {
+            image: url(assets/down-arrow.png);
+            width: 20px;
+            height: 20px;
+            margin-right: 6px;
+            }
+        """)
+        form_layout.addWidget(self.gender_input)
+
+        # Diagnosis
+        diagnosis_label = QLabel("Chẩn đoán")
+        diagnosis_label.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {TEXT_COLOR}; margin-bottom: 2px; border: none;")
+        form_layout.addWidget(diagnosis_label)
+        self.diagnosis_input = QLineEdit()
+        self.diagnosis_input.setPlaceholderText("Nhập chẩn đoán")
+        self.diagnosis_input.setStyleSheet("""
+            QLineEdit {
+            font-size: 15px; border-radius: 8px; padding: 8px;
+            border: 1px solid #bfc9d1;
+            background: #fafdff;
+            }
+            QLineEdit:focus {
+            border: 1.5px solid #406D96;
+            }
+        """)
+        form_layout.addWidget(self.diagnosis_input)
 
         # Hospital input
         hospital_label = QLabel("Bệnh viện")
@@ -374,5 +550,13 @@ class AddPrescriptionScreenUI(QWidget):
             "name": self.name_input.text(),
             "hospital_name": self.hospital_input.text(),
             "category_name": self.category_input.currentText(),
-            "medicines": [form.get_data() for form in self.medicine_forms]
+            "medicine_details": {
+                "patient_name": self.patient_input.text(),
+                "doctor_name": self.doctor_input.text(),
+                "age": self.age_input.text(),
+                "weight": self.weight_input.text(),
+                "gender": self.gender_input.currentText(),
+                "diagnosis": self.diagnosis_input.text(),
+                "medicines": [form.get_data() for form in self.medicine_forms]
+            }
         }

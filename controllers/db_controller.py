@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import logging
+import json
 
 class DatabaseController:
     def __init__(self, db_name='app.db'):
@@ -91,3 +92,4 @@ class DatabaseController:
         if self.conn:
             self.conn.close()
             logging.debug("Database connection closed") 
+    

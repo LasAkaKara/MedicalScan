@@ -11,11 +11,13 @@ class HomeScreen(HomeScreenUI):
     go_to_settings = Signal()
     go_to_login = Signal()
     go_to_profile = Signal()
+    go_to_notification = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.loading_overlay = LoadingOverlay(self)
         self.logout_btn.clicked.connect(self.handle_logout)
+        self.bell_btn.clicked.connect(self.go_to_notification.emit)
         self.avatar_label.mousePressEvent = lambda event: self.go_to_profile.emit()
         self.db = DatabaseService()
 

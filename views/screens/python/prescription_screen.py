@@ -281,11 +281,14 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel
 from views.screens.pyside.prescription_screen_ui import PrescriptionScreenUI, PrescriptionCard
 from services.database_service import DatabaseService
+import json
 
 class PrescriptionScreen(PrescriptionScreenUI):
     go_to_add_prescription = Signal()
     go_to_home = Signal()
     go_to_scan = Signal()
+    go_to_detail = Signal(dict)
+    go_to_notification = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -293,28 +296,34 @@ class PrescriptionScreen(PrescriptionScreenUI):
         self.add_manual_btn.clicked.connect(self.handle_add_prescription)
         self.search_input.textChanged.connect(self.search_prescriptions)
         self.back_btn.clicked.connect(self.handle_back)
+        self.bell_btn.clicked.connect(self.go_to_notification.emit)
         self.db = DatabaseService()
         self.user_id = 2  # Replace with actual user_id logic if needed
         self.load_prescriptions()
+        
 
     def load_prescriptions(self):
         prescriptions = self.db.get_user_prescriptions(self.user_id)
-        # self.display_prescriptions(prescriptions)
-
-    # def display_prescriptions(self, prescriptions):
-    #     # Clear old widgets
-    #     for i in reversed(range(self.prescriptions_layout.count())):
-    #         widget = self.prescriptions_layout.itemAt(i).widget()
-    #         if widget:
-    #             widget.setParent(None)
-    #     if not prescriptions:
-    #         self.prescriptions_layout.addWidget(QLabel("Không có đơn thuốc nào"))
-    #         return
-    #     for p in prescriptions:
-    #         # You should fetch medicines for each prescription here if needed
-    #         # For demo, assume p['medicines'] is already present
-    #         card = PrescriptionCard(p)
-    #         self.prescriptions_layout.addWidget(card)
+        print("Fetched prescriptions:", prescriptions)
+        # Parse medicine_details JSON for each prescription
+        for p in prescriptions:
+            if isinstance(p.get("medicine_details"), str):
+                try:
+                    p["medicine_details"] = json.loads(p["medicine_details"])
+                    print("Prescription after parsing:", p)
+                except Exception:
+                    p["medicine_details"] = {"medicines": []}
+            p["medicines"] = p["medicine_details"].get("medicines", [])
+        # Clear old widgets
+        for i in reversed(range(self.prescriptions_layout.count())):
+            widget = self.prescriptions_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+        # Add cards
+        for p in prescriptions:
+            card = PrescriptionCard(p)
+            card.view_details.connect(self.handle_view_details)  # <-- Connect the signal here
+            self.prescriptions_layout.addWidget(card)
 
     def search_prescriptions(self, query):
         prescriptions = self.db.get_user_prescriptions(self.user_id)
@@ -330,6 +339,9 @@ class PrescriptionScreen(PrescriptionScreenUI):
 
     def handle_add_prescription(self):
         self.go_to_add_prescription.emit()
+    
+    def handle_view_details(self, prescription):
+        self.go_to_detail.emit(prescription)
     
     def handle_scan(self):
         self.go_to_scan.emit()

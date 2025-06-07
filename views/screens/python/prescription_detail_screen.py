@@ -300,6 +300,7 @@ from services.database_service import DatabaseService
 from datetime import datetime
 import os
 import webbrowser
+import json
 
 class PrescriptionDetailScreen(PrescriptionDetailScreenUI):
     go_to_history = Signal()
@@ -307,14 +308,50 @@ class PrescriptionDetailScreen(PrescriptionDetailScreenUI):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.back_btn.clicked.connect(self.handle_back)
-        self.print_btn.clicked.connect(self.handle_print)
-        self.share_btn.clicked.connect(self.handle_share)
         self.prescription_id = None
         self.db = DatabaseService()
 
     def set_prescription_id(self, prescription_id):
-        self.prescription_id = prescription_id
-        self.load_prescription_details()
+        db = DatabaseService()
+        prescription = db.get_prescription_detail(prescription_id)
+        if prescription:
+            # Parse medicine_details if needed
+            if isinstance(prescription.get("medicine_details"), str):
+                try:
+                    prescription["medicine_details"] = json.loads(prescription["medicine_details"])
+                except Exception:
+                    prescription["medicine_details"] = {"medicines": []}
+            prescription["medicines"] = prescription["medicine_details"].get("medicines", [])
+            self.set_prescription(prescription)
+
+    def set_prescription(self, prescription):
+        # Get patient info from medicine_details if present
+        medicine_details = prescription.get('medicine_details', {})
+        if isinstance(medicine_details, str):
+            try:
+                medicine_details = json.loads(medicine_details)
+            except Exception:
+                medicine_details = {}
+
+        self.patient_name.setText(medicine_details.get('patient_name', ''))
+        self.doctor_name.setText(medicine_details.get('doctor_name', ''))
+        self.age.setText(str(medicine_details.get('age', '')))
+        self.weight.setText(str(medicine_details.get('weight', '')))
+        self.gender.setText(medicine_details.get('gender', ''))
+        self.diagnosis.setText(medicine_details.get('diagnosis', ''))
+        self.created_date.setText(str(prescription.get('created_at', '')))
+        self.hospital_name.setText(str(prescription.get('hospital_name', '')))
+        self.category_name.setText(str(prescription.get('category_name', '')))
+
+        # Clear old medicines
+        for i in reversed(range(self.medicines_layout.count())):
+            widget = self.medicines_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+        # Add new medicines
+        for med in medicine_details.get('medicines', []):
+            card = PrescriptionMedicineCard(med)
+            self.medicines_layout.addWidget(card)
 
     def handle_back(self):
         self.go_to_history.emit()

@@ -230,22 +230,72 @@ class DatabaseService:
             prescriptions = [
                 (
                     now.strftime('%Y-%m-%d %H:%M:%S'),
-                    'Điều trị viêm họng',
+                    'Đơn thuốc điều trị cảm cúm',
                     user_id,  # Use the actual user_id
-                    'Bệnh viện Đa khoa Trung ương',
+                    'Phòng khám Đa khoa Quốc tế',
                     category_id,
                     json.dumps({
+                        "patient_name": "Bệnh nhân.176215",
+                        "doctor_name": "Bác sỹ.165752",
+                        "age": 7,
+                        "weight": "58kg",
+                        "gender": "Nam",
+                        "diagnosis": "Ung Thư Vòm Họng Giai Đoạn Đầu",
                         "medicines": [
                             {
-                                "medicine_id": 1,
-                                "usage_time": ["sáng", "tối"],
-                                "quantity_per_time": 1,
-                                "total_quantity": 20,
-                                "usage_instruction": "Uống sau khi ăn với nhiều nước",
-                                "duration_days": 10
+                                "medicine_name": "Metformin Hydrochloride",
+                                "type": "Viên",
+                                "strength": "850 mg",
+                                "total_quantity": "27 Viên",
+                                "quantity_per_time": "3 Viên 1 ngày 3 lần.",
+                                "duration_days": "9 ngày",
+                                "usage_instruction": "",
+                                "usage_time": [
+                                    {"time": "Sáng", "quantity": 1},
+                                    {"time": "Trưa", "quantity": 1},
+                                    {"time": "Tối", "quantity": 1},
+                                ],
+                            },
+                            {
+                                "medicine_name": "Fexofenadine Hydrochloride",
+                                "type": "Viên",
+                                "strength": "120 mg",
+                                "total_quantity": "27 Viên",
+                                "quantity_per_time": "3 Viên 1 ngày 3 lần.",
+                                "duration_days": "9 ngày",
+                                "usage_instruction": "",
+                                "usage_time": [
+                                    {"time": "Sáng", "quantity": 1},
+                                    {"time": "Trưa", "quantity": 1},
+                                    {"time": "Tối", "quantity": 1},
+                                ],
+                            },
+                            {
+                                "medicine_name": "Tamsulosin Hydrochloride",
+                                "type": "Viên",
+                                "strength": "0.4 mg",
+                                "total_quantity": "20 Viên",
+                                "quantity_per_time": "Sáng 1 Viên, Trưa 1 Viên, trước khi ăn.",
+                                "duration_days": "10 ngày",
+                                "usage_instruction": "",
+                                "usage_time": [
+                                    {"time": "Sáng", "quantity": 1},
+                                    {"time": "Trưa", "quantity": 1},
+                                ],
+                            },
+                            {
+                                "medicine_name": "Carboxymethyl Cellulose + Glycerin",
+                                "type": "Viên",
+                                "strength": "0.5%+0.9%",
+                                "total_quantity": "20 ml",
+                                "quantity_per_time": "1 ml khi buồn nôn.",
+                                "duration_days": "10 ngày",
+                                "usage_instruction": "",
+                                "usage_time": [
+                                    {"time": "Khi buồn nôn", "quantity": "1ml"},
+                                ],
                             }
-                        ],
-                        "total_medicines": 1
+                        ]
                     })
                 )
             ]
@@ -743,4 +793,44 @@ class DatabaseService:
             return False
         finally:
             cursor.close()
-            conn.close() 
+            conn.close()
+
+    def add_prescription(self, user_id, name, hospital_name, category_name, medicine_details):
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            # Get or create category_id
+            cursor.execute(
+                "SELECT id FROM categories WHERE name = %s AND user_id = %s",
+                (category_name, user_id)
+            )
+            category = cursor.fetchone()
+            if category:
+                category_id = category[0] if isinstance(category, tuple) else category['id']
+            else:
+                cursor.execute(
+                    "INSERT INTO categories (user_id, name) VALUES (%s, %s)",
+                    (user_id, category_name)
+                )
+                conn.commit()
+                category_id = cursor.lastrowid
+
+            # Insert prescription
+            cursor.execute(
+                """
+                INSERT INTO prescriptions (created_at, name, user_id, hospital_name, category_id, medicine_details)
+                VALUES (NOW(), %s, %s, %s, %s, %s)
+                """,
+                (name, user_id, hospital_name, category_id, json.dumps(medicine_details, ensure_ascii=False))
+            )
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error adding prescription: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()

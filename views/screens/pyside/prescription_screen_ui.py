@@ -510,7 +510,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QSizePolicy, QToolButton, QGridLayout, QGraphicsDropShadowEffect
 )
 from PySide6.QtGui import QIcon, QAction
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, Signal
 from themes import PRIMARY_COLOR, FONT_SIZE_MD, FONT_SIZE_XL, HINT_COLOR, FONT_FAMILY
 
 class MedicineRow(QFrame):
@@ -529,76 +529,79 @@ class MedicineRow(QFrame):
         main_layout.setHorizontalSpacing(8)
         main_layout.setVerticalSpacing(2)
 
-        # --- Top row ---
+        # --- Top row: Medicine name (wraps, spans all columns) ---
         name_label = QLabel(name)
         name_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; font-weight: bold; color: #344054; border: none;")
+        name_label.setWordWrap(True)
         name_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        main_layout.addWidget(name_label, 0, 0, 1, 6, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+        main_layout.addWidget(name_label, 0, 0, 1, 9)  # Span all columns
 
-        # Loại
+        # --- Second row: Type and Quantity ---
         type_desc = QLabel("Loại:")
         type_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
-        type_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
         main_layout.addWidget(type_desc, 1, 0, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
         type_value = QLabel(med_type)
         type_value.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
-        type_value.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        main_layout.addWidget(type_value, 1, 1, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+        main_layout.addWidget(type_value, 1, 1, 1, 2, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
-        # Sáng
-        sang_desc = QLabel("Sáng:")
-        sang_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
-        sang_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(sang_desc, 1, 2, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
-
-        sang_val = QLabel("1" if "Sáng" in times else "0")
-        sang_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
-        sang_val.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(sang_val, 1, 3, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
-
-        # Trưa
-        trua_desc = QLabel("Trưa:")
-        trua_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
-        trua_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(trua_desc, 1, 4, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
-
-        trua_val = QLabel("1" if "Trưa" in times else "0")
-        trua_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
-        trua_val.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(trua_val, 1, 5, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
-
-        # Tối
-        toi_desc = QLabel("Tối:")
-        toi_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
-        toi_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(toi_desc, 1, 6, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
-
-        toi_val = QLabel("1" if "Tối" in times else "0")
-        toi_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
-        toi_val.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(toi_val, 1, 7, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
-
-        # SL (quantity) and edit icon in the last column, spanning both rows
         qty_desc = QLabel("SL:")
         qty_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
-        qty_desc.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(qty_desc, 0, 6, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignRight)
+        main_layout.addWidget(qty_desc, 1, 3, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
         qty_label = QLabel(str(quantity))
         qty_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #406D96; border: none;")
-        qty_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-        main_layout.addWidget(qty_label, 0, 7, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+        main_layout.addWidget(qty_label, 1, 4, 1, 2, alignment=Qt.AlignVCenter | Qt.AlignLeft)
 
+        # --- Third row: Sáng, Trưa, Tối ---
+        def get_time_quantity(times, label):
+            for t in times:
+                if isinstance(t, dict):
+                    if t.get("time") == label:
+                        return str(t.get("quantity", "1"))
+                elif isinstance(t, str):
+                    if t == label:
+                        return "1"
+            return "0"
+
+        sang_desc = QLabel("Sáng:")
+        sang_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        main_layout.addWidget(sang_desc, 2, 0, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        sang_val = QLabel(get_time_quantity(times, "Sáng"))
+        sang_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
+        main_layout.addWidget(sang_val, 2, 1, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        trua_desc = QLabel("Trưa:")
+        trua_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        main_layout.addWidget(trua_desc, 2, 2, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        trua_val = QLabel(get_time_quantity(times, "Trưa"))
+        trua_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
+        main_layout.addWidget(trua_val, 2, 3, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        toi_desc = QLabel("Tối:")
+        toi_desc.setStyleSheet("font-size: 13px; color: #667085; font-weight: 600; border: none;")
+        main_layout.addWidget(toi_desc, 2, 4, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        toi_val = QLabel(get_time_quantity(times, "Tối"))
+        toi_val.setStyleSheet("font-size: 13px; color: #406D96; font-weight: bold; border: none;")
+        main_layout.addWidget(toi_val, 2, 5, 1, 1, alignment=Qt.AlignVCenter | Qt.AlignLeft)
+
+        # --- Edit button at the end, vertically centered across all rows ---
         self.edit_btn = QToolButton()
         self.edit_btn.setIcon(QIcon("assets/edit.png"))
         self.edit_btn.setStyleSheet("border: none;")
         self.edit_btn.setToolTip("Chỉnh sửa thuốc")
         self.edit_btn.setIconSize(QSize(24, 24))
         self.edit_btn.setFixedSize(32, 48)
-        main_layout.addWidget(self.edit_btn, 0, 8, 2, 1, alignment=Qt.AlignVCenter | Qt.AlignRight)
+        main_layout.addWidget(self.edit_btn, 0, 8, 3, 1, alignment=Qt.AlignVCenter | Qt.AlignRight)
+    
+    
 
 class PrescriptionCard(QFrame):
+    view_details = Signal(dict)
+
     def __init__(self, prescription, parent=None):
         super().__init__(parent)
         self.setFrameShape(QFrame.NoFrame)  # No border for the card container
@@ -630,6 +633,18 @@ class PrescriptionCard(QFrame):
         title_label.setStyleSheet(f"font-size: 17px; font-weight: bold; color: #344054; font-family: {FONT_FAMILY};")
         top_row.addWidget(title_label)
         top_row.addStretch()
+
+        # Edit prescription button
+        self.edit_btn = QToolButton()
+        self.edit_btn.setIcon(QIcon("assets/edit.png"))
+        self.edit_btn.setStyleSheet(f"""
+            font-family: {FONT_FAMILY};
+            border: none;
+            padding: 0px;
+        """)
+        self.edit_btn.setIconSize(QSize(32, 32))
+        self.edit_btn.setFixedSize(40, 40)
+        top_row.addWidget(self.edit_btn, alignment=Qt.AlignVCenter)
 
         # Expand/collapse button with custom image
         self.expand_btn = QToolButton()
@@ -700,8 +715,13 @@ class PrescriptionCard(QFrame):
         date_icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         info_row.addWidget(date_icon_label)
         # Date text
-        date_label = QLabel(prescription.get('created_at', ''))
-        date_label.setStyleSheet(f"font-size: 13px; font-weight: 600; color: #667085; font-family: {FONT_FAMILY};")
+        created_at = prescription.get('created_at', '')
+        if isinstance(created_at, (str, type(None))):
+            date_str = created_at or ''
+        else:
+            # Convert datetime to string in your desired format
+            date_str = created_at.strftime('%d/%m/%Y')
+        date_label = QLabel(date_str)
         info_row.addWidget(date_label)
         # Hospital icon
         hospital_icon_label = QLabel()
@@ -727,7 +747,7 @@ class PrescriptionCard(QFrame):
             med_row = MedicineRow(
                 name=med.get('medicine_name', ''),
                 med_type=med.get('type', ''),
-                quantity=med.get('quantity_per_time', ''),
+                quantity=med.get('total_quantity', ''),
                 times=med.get('usage_time', []),
             )
             # Set font family for all QLabel children in MedicineRow
@@ -737,6 +757,25 @@ class PrescriptionCard(QFrame):
             self.meds_layout.addWidget(med_row)
         self.main_layout.addWidget(self.meds_widget)
 
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        self.detail_btn = QPushButton("Xem chi tiết")
+        self.detail_btn.setStyleSheet("""
+            QPushButton {
+                background: #406D96;
+                color: white;
+                font-size: 14px;
+                border-radius: 8px;
+                padding: 6px 18px;
+            }
+            QPushButton:hover {
+                background: #27496d;
+            }
+        """)
+        btn_row.addWidget(self.detail_btn)
+        self.main_layout.addLayout(btn_row)
+        self.detail_btn.clicked.connect(self._on_view_details)
+
     def toggle_expand(self):
         self.expanded = not self.expanded
         self.meds_widget.setVisible(self.expanded)
@@ -744,6 +783,9 @@ class PrescriptionCard(QFrame):
             self.expand_btn.setIcon(QIcon("assets/up-arrow.png"))
         else:
             self.expand_btn.setIcon(QIcon("assets/down-arrow.png"))
+    
+    def _on_view_details(self):
+        self.view_details.emit(self.prescription)
 
 class PrescriptionScreenUI(QWidget):
     def __init__(self, parent=None):
@@ -856,6 +898,9 @@ class PrescriptionScreenUI(QWidget):
         # Scroll area for prescriptions
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Disable horizontal scroll
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Modern thin scrollbar style
         self.scroll_area.setStyleSheet("""
             QScrollArea {
             border: none;
@@ -864,42 +909,38 @@ class PrescriptionScreenUI(QWidget):
             QScrollArea > QWidget {
             background: transparent;
             }
-            QScrollBar:vertical, QScrollBar:horizontal {
+            QScrollBar:vertical {
             background: transparent;
+            width: 6px;
+            margin: 4px 2px 4px 0px;
+            border-radius: 3px;
+            }
+            QScrollBar::handle:vertical {
+            background: #D0D5DD;
+            min-height: 36px;
+            border-radius: 3px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            height: 0px;
+            background: none;
+            border: none;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            background: none;
             }
         """)
         self.scroll_area.viewport().setStyleSheet("background: transparent;")
         self.prescriptions_container = QWidget()
+        self.prescriptions_container.setMinimumWidth(0)
+        self.prescriptions_container.setMaximumWidth(self.scroll_area.width())  # Prevent overflow
         self.prescriptions_layout = QVBoxLayout(self.prescriptions_container)
         self.prescriptions_layout.setAlignment(Qt.AlignHCenter | Qt.AlignTop)  # Center horizontally, top vertically
         self.prescriptions_layout.setContentsMargins(0, 0, 0, 0)
         self.scroll_area.setWidget(self.prescriptions_container)
         inner_layout.addWidget(self.scroll_area)
 
-        # --- Add a sample prescription card for preview ---
-        sample_prescription = {
-            "name": "Thuốc tuyến giáp",
-            "category_name": "Mãn tính",
-            "created_at": "2024-06-01",
-            "hospital_name": "Bệnh viện Bạch Mai",
-            "medicines": [
-                {
-                    "medicine_name": "Levothyroxine",
-                    "type": "Viên nén",
-                    "quantity_per_time": "1",
-                    "usage_time": ["Sáng"],
-                },
-                {
-                    "medicine_name": "Calcium",
-                    "type": "Viên nén",
-                    "quantity_per_time": "2",
-                    "usage_time": ["Trưa", "Tối"],
-                }
-            ]
-        }
-        # Keep a reference to avoid garbage collection
-        self._sample_card = PrescriptionCard(sample_prescription)
-        self.prescriptions_layout.addWidget(self._sample_card)
+        
+        
 
         # --- Bottom action bar container ---
         action_bar_container = QWidget()

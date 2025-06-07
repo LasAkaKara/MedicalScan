@@ -1,0 +1,48 @@
+{
+  "patient_name": "Bệnh nhân.176215",
+  "doctor_name": "Bác sỹ.165752",
+  "age": 7,
+  "weight": "58kg",
+  "gender": "Nam",
+  "diagnosis": "Ung Thư Vòm Họng Giai Đoạn Đầu",
+  "date": "20 tháng 10 nam 2024",
+  "medications": [
+    {
+      "index": "01",
+      "name": "Metformin Hydrochloride",
+      "strength": "850 mg",
+      "total": "27 Viên",
+      "usage": "3 Viên 1 ngày 3 lần.",
+      "duration": "9 ngày"
+    },
+    {
+      "index": "02",
+      "name": "Fexofenadine Hydrochloride",
+      "strength": "120 mg",
+      "total": "27 Viên",
+      "usage": "3 Viên 1 ngày 3 lần.",
+      "duration": "9 ngày"
+    },
+    {
+      "index": "03",
+      "name": "Tamsulosin Hydrochloride",
+      "strength": "0.4 mg",
+      "total": "20 Viên",
+      "usage": "Sáng 1 Viên, Trưa 1 Viên, trước khi ăn.",
+      "duration": "10 ngày"
+    },
+    {
+      "index": "04",
+      "name": "Carboxymethyl Cellulose + Glycerin",
+      "strength": "0.5%+0.9%",
+      "total": "20 ml",
+      "usage": "1 ml khi buồn nôn.",
+      "duration": "10 ngày"
+    }
+  ],
+  "days": 11,
+  "cost": "1,640,989",
+  "augmentations": {
+    "rotation_angle": 1.44
+  }
+}

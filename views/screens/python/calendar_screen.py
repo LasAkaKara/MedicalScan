@@ -4,12 +4,14 @@ from PySide6.QtCore import QDate
 
 class CalendarScreen(CalendarScreenUI):
     go_to_home = Signal()
+    go_to_notification = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.back_btn.clicked.connect(self.handle_back)
         self.prev_month_btn.clicked.connect(self.handle_prev_month)
         self.next_month_btn.clicked.connect(self.handle_next_month)
+        self.bell_btn.clicked.connect(self.go_to_notification.emit)
         self.set_month(self.current_year, self.current_month)
 
     def handle_back(self):
