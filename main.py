@@ -19,6 +19,7 @@ class MedicalApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
         self.current_user_email = None
+        self.current_user_id = None
         self.previous_screen = None
         self.stack = QStackedWidget()
 
@@ -29,13 +30,13 @@ class MedicalApp(QApplication):
         self.verification_screen = VerificationScreen()
         self.reset_password_screen = ResetPasswordScreen()
         self.scan_screen = ScanScreen()
-        self.prescription_screen = PrescriptionScreen()
-        self.profile_screen = ProfileScreen()
-        self.settings_screen = SettingsScreen()
+        self.prescription_screen = PrescriptionScreen(app=self)
+        self.profile_screen = ProfileScreen(app=self)
+        self.settings_screen = SettingsScreen(app=self)
         self.prescription_detail_screen = PrescriptionDetailScreen()
         self.calendar_screen = CalendarScreen()
         self.add_prescription_screen = AddPrescriptionScreen()
-        self.notification_screen = NotificationScreen()
+        self.notification_screen = NotificationScreen(app=self)
 
         # Add screens to stack
         self.stack.addWidget(self.login_screen)
@@ -109,6 +110,10 @@ class MedicalApp(QApplication):
     def show_home(self, email=None):
         if email:
             self.current_user_email = email
+            # Fetch user_id from DB
+            user = self.login_screen.auth_controller.db_service.get_user_by_email(email)
+            if user:
+                self.current_user_id = user.get("id")
         self.home_screen.set_user(self.current_user_email)
         self.stack.setCurrentWidget(self.home_screen)
 
@@ -124,6 +129,7 @@ class MedicalApp(QApplication):
         self.stack.setCurrentWidget(self.scan_screen)
     
     def show_prescription(self):
+        self.prescription_screen.load_prescriptions(self.current_user_id)
         self.stack.setCurrentWidget(self.prescription_screen)
 
     def show_add_prescription(self):
@@ -155,7 +161,7 @@ class MedicalApp(QApplication):
     def show_notification(self):
         # Store the current screen before switching
         self.previous_screen = self.stack.currentWidget()
-        self.notification_screen.set_notifications(self.notification_screen.notifications)
+        self.notification_screen.load_notifications_for_today()
         self.stack.setCurrentWidget(self.notification_screen)
 
     def handle_notification_back(self):

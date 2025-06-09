@@ -547,8 +547,10 @@ class DatabaseService:
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-            user = cursor.fetchone()
-            return user
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error fetching user by email: {e}")
+            return None
         finally:
             cursor.close()
             conn.close()
@@ -829,6 +831,38 @@ class DatabaseService:
             return True
         except Exception as e:
             print(f"Error adding prescription: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_user_by_id(self, user_id):
+        conn = self.connect()
+        if not conn:
+            return None
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            return cursor.fetchone()
+        except Exception as e:
+            print(f"Error fetching user by id: {e}")
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+
+    def update_user_preferences(self, user_id, preferences_json):
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE users SET preferences = %s WHERE id = %s", (preferences_json, user_id))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error updating user preferences: {e}")
             conn.rollback()
             return False
         finally:

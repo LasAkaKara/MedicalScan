@@ -235,16 +235,26 @@
 #                         on_release: root.save_settings() 
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox, QSlider, QFrame, QSpacerItem, QSizePolicy, QGraphicsDropShadowEffect
+    QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox, QSlider, QFrame,
+    QSpacerItem, QSizePolicy, QGraphicsDropShadowEffect, QTimeEdit, QScrollArea
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTime
 from views.components.switch import QSwitch
 from themes import PRIMARY_COLOR, FONT_FAMILY, FONT_SIZE_SM, FONT_SIZE_MD, FONT_SIZE_LG, HINT_COLOR, TEXT_COLOR
 
 class SettingsScreenUI(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        main_layout = QVBoxLayout(self)
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.addWidget(scroll)
+
+        container = QWidget()
+        scroll.setWidget(container)
+        main_layout = QVBoxLayout(container)
         main_layout.setAlignment(Qt.AlignTop)
         main_layout.setSpacing(24)
         main_layout.setContentsMargins(24, 24, 24, 24)
@@ -276,26 +286,6 @@ class SettingsScreenUI(QWidget):
         camera_title = QLabel("Cài đặt Camera")
         camera_title.setStyleSheet("font-size: 18px; font-weight: bold; color: #406D96; border: none;")
         camera_layout.addWidget(camera_title)
-
-        # Flip horizontal
-        flip_h_row = QHBoxLayout()
-        flip_h_label = QLabel("Lật ngang camera")
-        flip_h_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; border: none;")
-        self.flip_h_switch = QSwitch()
-        flip_h_row.addWidget(flip_h_label)
-        flip_h_row.addStretch()
-        flip_h_row.addWidget(self.flip_h_switch)
-        camera_layout.addLayout(flip_h_row)
-
-        # Flip vertical
-        flip_v_row = QHBoxLayout()
-        flip_v_label = QLabel("Lật dọc camera")
-        flip_v_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; border: none;")
-        self.flip_v_switch = QSwitch()
-        flip_v_row.addWidget(flip_v_label)
-        flip_v_row.addStretch()
-        flip_v_row.addWidget(self.flip_v_switch)
-        camera_layout.addLayout(flip_v_row)
 
         # Camera resolution
         res_row = QHBoxLayout()
@@ -354,6 +344,63 @@ class SettingsScreenUI(QWidget):
         camera_layout.addLayout(qual_row)
 
         main_layout.addWidget(camera_card)
+
+        # --- Notification Time Settings ---
+        notif_card = QFrame()
+        notif_card.setStyleSheet("""
+            QFrame {
+                background: #fff;
+                border-radius: 16px;
+                border: 1px solid #e0e0e0;
+            }
+        """)
+        notif_shadow = QGraphicsDropShadowEffect(self)
+        notif_shadow.setBlurRadius(12)
+        notif_shadow.setOffset(0, 4)
+        notif_shadow.setColor(Qt.gray)
+        notif_card.setGraphicsEffect(notif_shadow)
+        notif_layout = QVBoxLayout(notif_card)
+        notif_layout.setSpacing(14)
+        notif_layout.setContentsMargins(18, 18, 18, 18)
+
+        notif_title = QLabel("Giờ nhắc uống thuốc")
+        notif_title.setStyleSheet("font-size: 18px; font-weight: bold; color: #406D96; border: none;")
+        notif_layout.addWidget(notif_title)
+
+        # Morning time
+        row_morning = QHBoxLayout()
+        label_morning = QLabel("Sáng:")
+        label_morning.setStyleSheet("font-size: 15px;")
+        self.time_morning = QTimeEdit()
+        self.time_morning.setDisplayFormat("HH:mm")
+        self.time_morning.setTime(QTime(7, 0))
+        row_morning.addWidget(label_morning)
+        row_morning.addWidget(self.time_morning)
+        notif_layout.addLayout(row_morning)
+
+        # Noon time
+        row_noon = QHBoxLayout()
+        label_noon = QLabel("Trưa:")
+        label_noon.setStyleSheet("font-size: 15px;")
+        self.time_noon = QTimeEdit()
+        self.time_noon.setDisplayFormat("HH:mm")
+        self.time_noon.setTime(QTime(12, 0))
+        row_noon.addWidget(label_noon)
+        row_noon.addWidget(self.time_noon)
+        notif_layout.addLayout(row_noon)
+
+        # Evening time
+        row_evening = QHBoxLayout()
+        label_evening = QLabel("Tối:")
+        label_evening.setStyleSheet("font-size: 15px;")
+        self.time_evening = QTimeEdit()
+        self.time_evening.setDisplayFormat("HH:mm")
+        self.time_evening.setTime(QTime(18, 0))
+        row_evening.addWidget(label_evening)
+        row_evening.addWidget(self.time_evening)
+        notif_layout.addLayout(row_evening)
+
+        main_layout.addWidget(notif_card)
 
         # --- App Settings Card ---
         app_card = QFrame()
@@ -433,15 +480,11 @@ class SettingsScreenUI(QWidget):
 
         main_layout.addWidget(theme_card)
 
-        # Spacer
+        # Spacer and buttons at the end
         main_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
-
-        # Save button
         self.save_btn = QPushButton("Lưu cài đặt")
         self.save_btn.setStyleSheet("background: #406D96; color: white; font-size: 16px; border-radius: 8px; padding: 10px;")
         main_layout.addWidget(self.save_btn)
-
-        # Back button
         self.back_btn = QPushButton("Quay lại")
         self.back_btn.setStyleSheet("color: #406D96; background: transparent; font-size: 14px;")
         main_layout.addWidget(self.back_btn)

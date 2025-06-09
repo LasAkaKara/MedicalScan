@@ -290,20 +290,20 @@ class PrescriptionScreen(PrescriptionScreenUI):
     go_to_detail = Signal(dict)
     go_to_notification = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, app, parent=None):
         super().__init__(parent)
+        self.app = app
         self.scan_btn.clicked.connect(self.handle_scan)
         self.add_manual_btn.clicked.connect(self.handle_add_prescription)
         self.search_input.textChanged.connect(self.search_prescriptions)
         self.back_btn.clicked.connect(self.handle_back)
         self.bell_btn.clicked.connect(self.go_to_notification.emit)
         self.db = DatabaseService()
-        self.user_id = 2  # Replace with actual user_id logic if needed
-        self.load_prescriptions()
         
 
-    def load_prescriptions(self):
-        prescriptions = self.db.get_user_prescriptions(self.user_id)
+    def load_prescriptions(self, user_id):
+        user_id = self.app.current_user_id
+        prescriptions = self.db.get_user_prescriptions(user_id)
         print("Fetched prescriptions:", prescriptions)
         # Parse medicine_details JSON for each prescription
         for p in prescriptions:

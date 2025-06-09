@@ -457,7 +457,7 @@ class ProfileScreen(ProfileScreenUI):
     go_to_login = Signal()
     go_to_home = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, app, parent=None):
         super().__init__(parent)
         self.current_email = None
         self.back_btn.clicked.connect(self.handle_back_to_home)
@@ -472,19 +472,19 @@ class ProfileScreen(ProfileScreenUI):
         self.current_email = email
         user = self.db.get_user_by_email(email)
         if user:
-            self.full_name_label.setText(user.get('full_name', 'User'))
-            self.email_label.setText(user.get('email', 'Not provided'))
-            self.prescription_count_label.setText(f"Đơn thuốc: {user.get('prescription_count', 0)}")
-            self.scan_count_label.setText(f"Lượt quét: {user.get('scan_count', 0)}")
-            # self.last_activity_label.setText(f"Hoạt động gần nhất: {user.get('last_activity', '-')}")
-            conditions = user.get('health_conditions', [])
-            # if conditions:
-            #     self.health_conditions_label.setText("Tình trạng sức khỏe: " + ", ".join(conditions))
-            # else:
-            #     self.health_conditions_label.setText("Tình trạng sức khỏe: Không có")
-            # Notification preferences (example)
-            # self.notif_medication.setChecked(user.get('notify_medication', True))
-            # self.notif_refills.setChecked(user.get('notify_refills', True))
+            self.full_name_label.setText(user.get('full_name') or "User")
+            self.email_label.setText(user.get('email') or "Not provided")
+            self.prescription_count_label.setText(f"Đơn thuốc: {user.get('prescription_count') or 0}")
+            self.scan_count_label.setText(f"Lượt quét: {user.get('scan_count') or 0}")
+            # # self.last_activity_label.setText(f"Hoạt động gần nhất: {user.get('last_activity', '-')}")
+            # conditions = user.get('health_conditions', [])
+            # # if conditions:
+            # #     self.health_conditions_label.setText("Tình trạng sức khỏe: " + ", ".join(conditions))
+            # # else:
+            # #     self.health_conditions_label.setText("Tình trạng sức khỏe: Không có")
+            # # Notification preferences (example)
+            # # self.notif_medication.setChecked(user.get('notify_medication', True))
+            # # self.notif_refills.setChecked(user.get('notify_refills', True))
         else:
             self.full_name_label.setText("User")
             self.email_label.setText("Not provided")

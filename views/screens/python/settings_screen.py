@@ -187,49 +187,75 @@ import json
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox
 from views.screens.pyside.settings_screen_ui import SettingsScreenUI
+from services.database_service import DatabaseService
 from views.components.switch import QSwitch
 
 class SettingsScreen(SettingsScreenUI):
     go_to_home = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, app, parent=None):
         super().__init__(parent)
-        self.settings_file = 'app_settings.json'
+        self.app = app
+        self.db = DatabaseService()
         self.save_btn.clicked.connect(self.save_settings)
         self.back_btn.clicked.connect(self.handle_back)
         self.load_settings()
 
     def load_settings(self):
-        if os.path.exists(self.settings_file):
+        # Get current user info from main app
+        user_id = self.app.current_user_id
+        user = self.db.get_user_by_id(user_id)
+        self.current_user = user
+        # Load preferences from DB
+        prefs = {}
+        if user and user.get("preferences"):
             try:
-                with open(self.settings_file, 'r') as f:
-                    s = json.load(f)
-                self.flip_h_switch.setChecked(s.get('camera_flip_horizontal', False))
-                self.flip_v_switch.setChecked(s.get('camera_flip_vertical', False))
-                self.res_combo.setCurrentText(s.get('camera_resolution', '640x480'))
-                self.quality_slider.setValue(s.get('camera_quality', 80))
-                self.auto_detect_switch.setChecked(s.get('auto_detect_documents', True))
-                self.save_original_switch.setChecked(s.get('save_original_images', False))
-                self.dark_mode_switch.setChecked(s.get('dark_mode', False))
-            except Exception as e:
-                QMessageBox.warning(self, "Lỗi", f"Không thể tải cài đặt: {e}")
+                prefs = json.loads(user["preferences"])
+            except Exception:
+                prefs = {}
+        # Set UI values
+        self.res_combo.setCurrentText(prefs.get('camera_resolution', '640x480'))
+        self.quality_slider.setValue(prefs.get('camera_quality', 80))
+        self.auto_detect_switch.setChecked(prefs.get('auto_detect_documents', True))
+        self.save_original_switch.setChecked(prefs.get('save_original_images', False))
+        self.dark_mode_switch.setChecked(prefs.get('dark_mode', False))
+        # Notification times
+        notif_times = prefs.get("notification_times", {})
+        self.time_morning.setTime(self._parse_time(notif_times.get("morning", "07:00")))
+        self.time_noon.setTime(self._parse_time(notif_times.get("noon", "12:00")))
+        self.time_evening.setTime(self._parse_time(notif_times.get("evening", "18:00")))
+
+
+    def _parse_time(self, tstr):
+        from PySide6.QtCore import QTime
+        try:
+            h, m = map(int, tstr.split(":"))
+            return QTime(h, m)
+        except Exception:
+            return QTime(7, 0)
 
     def save_settings(self):
-        s = {
-            'camera_flip_horizontal': self.flip_h_switch.isChecked(),
-            'camera_flip_vertical': self.flip_v_switch.isChecked(),
+        if not self.current_user:
+            QMessageBox.warning(self, "Lỗi", "Không tìm thấy người dùng hiện tại.")
+            return
+        prefs = {
             'camera_resolution': self.res_combo.currentText(),
             'camera_quality': self.quality_slider.value(),
             'auto_detect_documents': self.auto_detect_switch.isChecked(),
             'save_original_images': self.save_original_switch.isChecked(),
-            'dark_mode': self.dark_mode_switch.isChecked()
+            'dark_mode': self.dark_mode_switch.isChecked(),
+            'notification_times': {
+                "morning": self.time_morning.time().toString("HH:mm"),
+                "noon": self.time_noon.time().toString("HH:mm"),
+                "evening": self.time_evening.time().toString("HH:mm"),
+            }
         }
-        try:
-            with open(self.settings_file, 'w') as f:
-                json.dump(s, f, indent=4)
+        # Save to DB
+        success = self.db.update_user_preferences(self.current_user["id"], json.dumps(prefs, ensure_ascii=False))
+        if success:
             QMessageBox.information(self, "Thành công", "Đã lưu cài đặt.")
-        except Exception as e:
-            QMessageBox.critical(self, "Lỗi", f"Không thể lưu cài đặt: {e}")
+        else:
+            QMessageBox.critical(self, "Lỗi", "Không thể lưu cài đặt.")
 
     def handle_back(self):
         self.go_to_home.emit()

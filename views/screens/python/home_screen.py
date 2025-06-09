@@ -32,9 +32,9 @@ class HomeScreen(HomeScreenUI):
         """Load and display the current user's info on the home screen."""
         user = self.db.get_user_by_email(email)
         if user:
-            # Example: update greeting label and avatar if you have them
             if hasattr(self, "greet_label"):
-                self.greet_label.setText(f"Hi, {user.get('full_name', 'user')}!")
+                name = user.get('full_name') or "User"
+                self.greet_label.setText(f"Hi, {name}!")
 
     def handle_logout(self):
         reply = QMessageBox.question(self, "Logout", "Are you sure you want to logout?",

@@ -1,6 +1,9 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushButton, QFrame, QScrollArea, QCheckBox
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushButton, QFrame, QScrollArea,
+    QCheckBox, QButtonGroup, QButtonGroup, QRadioButton, QSizePolicy, QGraphicsDropShadowEffect
+)
 from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QIcon, QFont
+from PySide6.QtGui import QIcon, QFont, QColor
 
 class NotificationItem(QFrame):
     ticked = Signal(dict, bool)  # (notification, checked)
@@ -11,18 +14,27 @@ class NotificationItem(QFrame):
         self.setStyleSheet("""
             QFrame {
                 background: #fff;
-                border-radius: 12px;
-                border: 1px solid #e0e0e0;
+                border-radius: 14px;
                 margin-bottom: 10px;
             }
         """)
+        # Add shadow
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(16)
+        shadow.setOffset(0, 4)
+        shadow.setColor(QColor(0, 0, 0, 40))
+        self.setGraphicsEffect(shadow)
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 10, 16, 10)
         layout.setSpacing(12)
 
         # Info
         info_layout = QVBoxLayout()
-        title = QLabel(notification.get("title", ""))
+        presc_label = QLabel(f"Đơn: {notification.get('prescription_name', '')}")
+        presc_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #406D96;")
+        info_layout.addWidget(presc_label)
+        title = QLabel(notification.get("medicine_name", ""))
         title.setStyleSheet("font-size: 16px; font-weight: bold; color: #344054;")
         info_layout.addWidget(title)
         subtitle = QLabel(notification.get("subtitle", ""))
@@ -65,11 +77,51 @@ class NotificationScreenUI(QWidget):
         top_bar.addStretch()
         main_layout.addLayout(top_bar)
 
+        # --- Enhanced Filter bar (Segmented style) ---
+        filter_row = QHBoxLayout()
+        filter_row.setSpacing(0)
+        self.filter_group = QButtonGroup(self)
+        self.filter_all = QPushButton("Tất cả")
+        self.filter_morning = QPushButton("Sáng")
+        self.filter_noon = QPushButton("Trưa")
+        self.filter_evening = QPushButton("Tối")
+        for btn in [self.filter_all, self.filter_morning, self.filter_noon, self.filter_evening]:
+            btn.setCheckable(True)
+            btn.setMinimumWidth(80)
+            btn.setStyleSheet("""
+                QPushButton {
+                    border: none;
+                    background: #e3eaf6;
+                    color: #406D96;
+                    font-weight: bold;
+                    padding: 8px 0;
+                    border-radius: 0;
+                }
+                QPushButton:checked {
+                    background: #406D96;
+                    color: #fff;
+                }
+                QPushButton:first-child {
+                    border-top-left-radius: 12px;
+                    border-bottom-left-radius: 12px;
+                }
+                QPushButton:last-child {
+                    border-top-right-radius: 12px;
+                    border-bottom-right-radius: 12px;
+                }
+            """)
+            self.filter_group.addButton(btn)
+            filter_row.addWidget(btn)
+        self.filter_all.setChecked(True)
+        filter_row.addStretch()
+        main_layout.addLayout(filter_row)
+
         # Scroll area for notifications
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("""
             QScrollArea { border: none; background: transparent; }
+            QScrollArea > QWidget { background: transparent; }
             QScrollBar:vertical {
                 background: transparent;
                 width: 6px;
@@ -96,6 +148,7 @@ class NotificationScreenUI(QWidget):
         self.layout = QVBoxLayout(self.container)
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setSpacing(8)
+        self.container.setStyleSheet("background: transparent;")
         scroll.setWidget(self.container)
 
     def set_notifications(self, notifications):
@@ -108,4 +161,3 @@ class NotificationScreenUI(QWidget):
         for notif in notifications:
             item = NotificationItem(notif)
             self.layout.addWidget(item)
-            # You can connect item.ticked to a handler in your logic class
