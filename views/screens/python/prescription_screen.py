@@ -304,13 +304,11 @@ class PrescriptionScreen(PrescriptionScreenUI):
     def load_prescriptions(self, user_id):
         user_id = self.app.current_user_id
         prescriptions = self.db.get_user_prescriptions(user_id)
-        print("Fetched prescriptions:", prescriptions)
         # Parse medicine_details JSON for each prescription
         for p in prescriptions:
             if isinstance(p.get("medicine_details"), str):
                 try:
                     p["medicine_details"] = json.loads(p["medicine_details"])
-                    print("Prescription after parsing:", p)
                 except Exception:
                     p["medicine_details"] = {"medicines": []}
             p["medicines"] = p["medicine_details"].get("medicines", [])

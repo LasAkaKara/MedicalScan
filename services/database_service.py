@@ -161,8 +161,8 @@ class DatabaseService:
             
             prescriptions = cursor.fetchall()
             print(f"Found {len(prescriptions)} prescriptions")
-            for p in prescriptions:
-                print(f"Prescription: {p}")
+            # for p in prescriptions:
+            #     print(f"Prescription: {p}")
             
             return prescriptions
         except Exception as e:

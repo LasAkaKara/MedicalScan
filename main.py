@@ -1,6 +1,9 @@
 import sys
+import json
 from PySide6.QtWidgets import QApplication, QStackedWidget
 from PySide6.QtGui import QIcon
+from views.components.alarm_overlay import AlarmOverlay
+from PySide6.QtCore import QTimer, QTime, QDate
 from views.screens.python.login_screen import LoginScreen
 from views.screens.python.signup_screen import SignupScreen
 from views.screens.python.home_screen import HomeScreen
@@ -22,6 +25,10 @@ class MedicalApp(QApplication):
         self.current_user_id = None
         self.previous_screen = None
         self.stack = QStackedWidget()
+        self.alarm_timer = QTimer(self)
+        self.alarm_timer.timeout.connect(self.check_alarm_times)
+        self.alarm_timer.start(1000)
+        self.last_alarm_times = set()
 
         # Instantiate screens
         self.login_screen = LoginScreen()
@@ -34,7 +41,7 @@ class MedicalApp(QApplication):
         self.profile_screen = ProfileScreen(app=self)
         self.settings_screen = SettingsScreen(app=self)
         self.prescription_detail_screen = PrescriptionDetailScreen()
-        self.calendar_screen = CalendarScreen()
+        self.calendar_screen = CalendarScreen(app=self)
         self.add_prescription_screen = AddPrescriptionScreen()
         self.notification_screen = NotificationScreen(app=self)
 
@@ -149,6 +156,13 @@ class MedicalApp(QApplication):
         self.stack.setCurrentWidget(self.prescription_detail_screen)
     
     def show_calendar(self):
+        self.calendar_screen.selected_date = QDate.currentDate()
+        self.calendar_screen.set_month(
+            self.calendar_screen.selected_date.year(),
+            self.calendar_screen.selected_date.month()
+        )
+        self.calendar_screen._draw_calendar() 
+        self.calendar_screen.load_prescriptions_for_date(self.calendar_screen.selected_date)
         self.stack.setCurrentWidget(self.calendar_screen)
 
     def show_add_prescription(self):
@@ -171,6 +185,47 @@ class MedicalApp(QApplication):
             self.previous_screen = None
         else:
             self.stack.setCurrentWidget(self.home_screen)
+
+    def check_alarm_times(self):
+        # Only check if user is logged in
+        if not self.current_user_id:
+            return
+        user = self.settings_screen.db.get_user_by_id(self.current_user_id)
+        if not user:
+            return
+        prefs = {}
+        if user.get("preferences"):
+            try:
+                prefs = json.loads(user["preferences"])
+            except Exception:
+                prefs = {}
+        notif_times = prefs.get("notification_times", {})
+
+        # Always get the current time and date freshly
+        now_time = QTime.currentTime().toString("HH:mm")
+        now_date = QDate.currentDate().toString("yyyy-MM-dd")
+
+        # Get switches state from profile screen (if loaded)
+        med_on = getattr(self.profile_screen, "notif_medication", None)
+        refill_on = getattr(self.profile_screen, "notif_refills", None)
+        med_on = med_on.isChecked() if med_on is not None else True
+        refill_on = refill_on.isChecked() if refill_on is not None else True
+
+        # Medicine alarm
+        if med_on:
+            for t in ["morning", "noon", "evening"]:
+                alarm_time = notif_times.get(t)
+                # Use both time and date as key to avoid duplicate alarms after midnight
+                alarm_key = (t, now_date, now_time)
+                if alarm_time and now_time == alarm_time and alarm_key not in self.last_alarm_times:
+                    self.last_alarm_times.add(alarm_key)
+                    self.show_alarm_overlay("Đã đến giờ uống thuốc rồi")
+        # Clean up old times (keep only current date)
+        self.last_alarm_times = {(k, d, v) for (k, d, v) in self.last_alarm_times if d == now_date and v == now_time}
+
+    def show_alarm_overlay(self, message):
+        overlay = AlarmOverlay(message, parent=self.stack)
+        overlay.exec()
 
 
 

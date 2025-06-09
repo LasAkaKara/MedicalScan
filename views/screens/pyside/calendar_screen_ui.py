@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QGridLayout, QSizePolicy, QToolButton, QFrame, QGraphicsDropShadowEffect
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QGridLayout, QSizePolicy, QToolButton, QFrame, QGraphicsDropShadowEffect, QScrollArea
 )
 from PySide6.QtCore import Qt, QDate, QSize
 from PySide6.QtGui import QIcon, QColor, QFont
@@ -122,6 +122,45 @@ class CalendarScreenUI(QWidget):
         main_layout.addWidget(calendar_card)
         main_layout.setAlignment(Qt.AlignTop)
 
+        # --- Prescription List Section ---
+        self.prescription_section_label = QLabel("Đơn thuốc trong ngày")
+        self.prescription_section_label.setStyleSheet("font-size: 17px; font-weight: bold; color: #406D96; margin-top: 12px;")
+        main_layout.addWidget(self.prescription_section_label)
+
+        self.prescription_scroll = QScrollArea()
+        self.prescription_scroll.setWidgetResizable(True)
+        # Transparent background and modern scroll bar style
+        self.prescription_scroll.setStyleSheet("""
+            QScrollArea {
+            border: none;
+            background: transparent;
+            }
+            QScrollBar:vertical {
+            background: transparent;
+            width: 7px;
+            margin: 2px 0 2px 0;
+            border-radius: 3px;
+            }
+            QScrollBar::handle:vertical {
+            background: #406D96;
+            min-height: 24px;
+            border-radius: 3px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            height: 0;
+            background: none;
+            border: none;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            background: none;
+            }
+        """)
+        self.prescription_list_container = QWidget()
+        self.prescription_list_layout = QVBoxLayout(self.prescription_list_container)
+        self.prescription_list_layout.setAlignment(Qt.AlignTop)
+        self.prescription_scroll.setWidget(self.prescription_list_container)
+        main_layout.addWidget(self.prescription_scroll)
+
         self._draw_calendar()
 
     def _draw_calendar(self):
@@ -160,6 +199,8 @@ class CalendarScreenUI(QWidget):
                 self.selected_date.month() == self.current_month and
                 self.selected_date.day() == day):
                 btn.setChecked(True)
+            else:
+                btn.setChecked(False)
             col += 1
             if col > 6:
                 col = 0
@@ -192,11 +233,7 @@ class CalendarScreenUI(QWidget):
 
     def _on_date_clicked(self, day):
         self.selected_date = QDate(self.current_year, self.current_month, day)
+        self.load_prescriptions_for_date(self.selected_date)
         self._draw_calendar()
 
-    def set_month(self, year, month):
-        self.current_year = year
-        self.current_month = month
-        self.month_label.setText(f"{month:02d}/{year}")
-        self.month_label.setStyleSheet(f"font-weight: 600; color: {PRIMARY_COLOR}; font-family: {FONT_FAMILY}; font-size: {FONT_SIZE_LG}px; border: none;")
-        self._draw_calendar()
+        

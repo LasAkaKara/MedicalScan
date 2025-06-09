@@ -238,19 +238,25 @@ class SettingsScreen(SettingsScreenUI):
         if not self.current_user:
             QMessageBox.warning(self, "Lỗi", "Không tìm thấy người dùng hiện tại.")
             return
-        prefs = {
-            'camera_resolution': self.res_combo.currentText(),
-            'camera_quality': self.quality_slider.value(),
-            'auto_detect_documents': self.auto_detect_switch.isChecked(),
-            'save_original_images': self.save_original_switch.isChecked(),
-            'dark_mode': self.dark_mode_switch.isChecked(),
-            'notification_times': {
-                "morning": self.time_morning.time().toString("HH:mm"),
-                "noon": self.time_noon.time().toString("HH:mm"),
-                "evening": self.time_evening.time().toString("HH:mm"),
-            }
+        # Load existing preferences to preserve other settings
+        prefs = {}
+        if self.current_user.get("preferences"):
+            try:
+                prefs = json.loads(self.current_user["preferences"])
+            except Exception:
+                prefs = {}
+        # Update only the relevant settings
+        prefs['camera_resolution'] = self.res_combo.currentText()
+        prefs['camera_quality'] = self.quality_slider.value()
+        prefs['auto_detect_documents'] = self.auto_detect_switch.isChecked()
+        prefs['save_original_images'] = self.save_original_switch.isChecked()
+        prefs['dark_mode'] = self.dark_mode_switch.isChecked()
+        prefs['notification_times'] = {
+            "morning": self.time_morning.time().toString("HH:mm"),
+            "noon": self.time_noon.time().toString("HH:mm"),
+            "evening": self.time_evening.time().toString("HH:mm"),
         }
-        # Save to DB
+        # Now save back to DB
         success = self.db.update_user_preferences(self.current_user["id"], json.dumps(prefs, ensure_ascii=False))
         if success:
             QMessageBox.information(self, "Thành công", "Đã lưu cài đặt.")

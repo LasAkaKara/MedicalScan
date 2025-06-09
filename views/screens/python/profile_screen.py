@@ -448,6 +448,7 @@
 #         super().__init__(**kwargs)
 #         self.condition = "" 
 
+import json
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QMessageBox, QInputDialog
 from views.screens.pyside.profile_screen_ui import ProfileScreenUI, EditProfileModal, ChangePasswordModal
@@ -476,15 +477,15 @@ class ProfileScreen(ProfileScreenUI):
             self.email_label.setText(user.get('email') or "Not provided")
             self.prescription_count_label.setText(f"Đơn thuốc: {user.get('prescription_count') or 0}")
             self.scan_count_label.setText(f"Lượt quét: {user.get('scan_count') or 0}")
-            # # self.last_activity_label.setText(f"Hoạt động gần nhất: {user.get('last_activity', '-')}")
-            # conditions = user.get('health_conditions', [])
-            # # if conditions:
-            # #     self.health_conditions_label.setText("Tình trạng sức khỏe: " + ", ".join(conditions))
-            # # else:
-            # #     self.health_conditions_label.setText("Tình trạng sức khỏe: Không có")
-            # # Notification preferences (example)
-            # # self.notif_medication.setChecked(user.get('notify_medication', True))
-            # # self.notif_refills.setChecked(user.get('notify_refills', True))
+            # Load notification preferences
+            prefs = {}
+            if user.get("preferences"):
+                try:
+                    prefs = json.loads(user["preferences"])
+                except Exception:
+                    prefs = {}
+            self.notif_medication.setChecked(prefs.get('notify_medication', True))
+            self.notif_refills.setChecked(prefs.get('notify_refills', True))
         else:
             self.full_name_label.setText("User")
             self.email_label.setText("Not provided")
@@ -500,9 +501,29 @@ class ProfileScreen(ProfileScreenUI):
 
     def handle_edit(self):
         def save_callback(name, email, phone):
-            self.full_name_label.setText(name)
-            self.email_label.setText(email)
-            # Save to DB if needed
+            # Save to DB
+            user = self.db.get_user_by_email(self.current_email)
+            if not user:
+                QMessageBox.warning(self, "Lỗi", "Không tìm thấy người dùng.")
+                return
+            # Use old values if fields are empty
+            full_name = name or user.get('full_name') or "User"
+            email_val = email or user.get('email')
+            phone_val = phone or user.get('phone', "")
+            # Keep preferences unchanged
+            preferences = user.get('preferences', '{}')
+            success = self.db.update_user_profile(
+                username=user['email'],
+                email=email_val,
+                full_name=full_name,
+                phone=phone_val,
+                preferences=preferences,
+            )
+            if success:
+                QMessageBox.information(self, "Thành công", "Cập nhật thông tin thành công.")
+                self.load_user_data(email_val)
+            else:
+                QMessageBox.critical(self, "Lỗi", "Cập nhật thông tin thất bại.")
         dlg = EditProfileModal(
             self.full_name_label.text(),
             self.email_label.text(),
@@ -569,4 +590,16 @@ class ProfileScreen(ProfileScreenUI):
         dlg.exec()
 
     def handle_notif_change(self, label, is_checked):
-        print(f"{label}: {'Bật' if is_checked else 'Tắt'}")
+        user = self.db.get_user_by_email(self.current_email)
+        if not user:
+            return
+        prefs = {}
+        if user.get("preferences"):
+            try:
+                prefs = json.loads(user["preferences"])
+            except Exception:
+                prefs = {}
+        # Always save both switches' states
+        prefs["notify_medication"] = self.notif_medication.isChecked()
+        prefs["notify_refills"] = self.notif_refills.isChecked()
+        self.db.update_user_preferences(user["id"], json.dumps(prefs, ensure_ascii=False))
