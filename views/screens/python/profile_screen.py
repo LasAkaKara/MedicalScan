@@ -450,8 +450,11 @@
 
 import json
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtWidgets import QMessageBox, QInputDialog
+from PySide6.QtWidgets import QMessageBox, QInputDialog, QFileDialog
+from PySide6.QtGui import QPixmap, QPainterPath, QPainter
+from urllib.request import urlopen
 from views.screens.pyside.profile_screen_ui import ProfileScreenUI, EditProfileModal, ChangePasswordModal
+from services.cloudinary_service import upload_avatar
 from services.database_service import DatabaseService
 
 class ProfileScreen(ProfileScreenUI):
@@ -467,6 +470,7 @@ class ProfileScreen(ProfileScreenUI):
         self.change_pw_btn.clicked.connect(self.handle_change_password)
         self.notif_medication.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc thuốc", state))
         self.notif_refills.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc tái đơn", state))
+        self.upload_avatar_btn.clicked.connect(self.handle_upload_avatar)
         self.db = DatabaseService()
 
     def load_user_data(self, email):
@@ -477,6 +481,15 @@ class ProfileScreen(ProfileScreenUI):
             self.email_label.setText(user.get('email') or "Not provided")
             self.prescription_count_label.setText(f"Đơn thuốc: {user.get('prescription_count') or 0}")
             self.scan_count_label.setText(f"Lượt quét: {user.get('scan_count') or 0}")
+            avatar_url = user.get("avatar_url")
+            if avatar_url:
+                try:
+                    data = urlopen(avatar_url).read()
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(data)
+                    self.avatar_label.setPixmap(self.get_rounded_pixmap(pixmap, 72))
+                except Exception:
+                    pass
             # Load notification preferences
             prefs = {}
             if user.get("preferences"):
@@ -532,7 +545,37 @@ class ProfileScreen(ProfileScreenUI):
             self
         )
         dlg.exec()
+
+    def handle_upload_avatar(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Chọn ảnh đại diện", "", "Images (*.png *.jpg *.jpeg)")
+        if file_path:
+            try:
+                # Upload to Cloudinary
+                url = upload_avatar(file_path, public_id=f"user_{self.current_email}")
+                # Save to DB
+                user = self.db.get_user_by_email(self.current_email)
+                if user:
+                    self.db.update_user_avatar(user["id"], url)
+                    # Update UI
+                    pixmap = QPixmap(file_path)
+                    self.avatar_label.setPixmap(self.get_rounded_pixmap(pixmap, 72))
+                    QMessageBox.information(self, "Thành công", "Cập nhật ảnh đại diện thành công!")
+            except Exception as e:
+                QMessageBox.critical(self, "Lỗi", f"Không thể tải ảnh: {e}")
     
+    def get_rounded_pixmap(self, pixmap, size=72):
+        # Ensure square
+        pixmap = pixmap.scaled(size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        rounded = QPixmap(size, size)
+        rounded.fill(Qt.transparent)
+        painter = QPainter(rounded)
+        painter.setRenderHint(QPainter.Antialiasing)
+        path = QPainterPath()
+        path.addEllipse(0, 0, size, size)
+        painter.setClipPath(path)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.end()
+        return rounded
 
     def handle_change_password(self):
         def change_callback(current, new, confirm, modal):

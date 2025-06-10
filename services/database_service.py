@@ -54,7 +54,8 @@ class DatabaseService:
                 full_name VARCHAR(255) DEFAULT NULL,
                 phone VARCHAR(20) DEFAULT NULL,
                 preferences TEXT DEFAULT NULL,
-                health_data TEXT DEFAULT NULL
+                health_data TEXT DEFAULT NULL,
+                avatar_url VARCHAR(255) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ''')
 
@@ -637,6 +638,23 @@ class DatabaseService:
         finally:
             if cursor:
                 cursor.close()
+            conn.close()
+
+    def update_user_avatar(self, user_id, avatar_url):
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("UPDATE users SET avatar_url = %s WHERE id = %s", (avatar_url, user_id))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error updating avatar: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
             conn.close()
 
     def verify_password(self, username, password):

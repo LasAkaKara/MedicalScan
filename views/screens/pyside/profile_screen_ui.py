@@ -259,11 +259,40 @@ class ProfileScreenUI(QWidget):
 
         # Avatar, username, email
         avatar_row = QHBoxLayout()
+        avatar_container = QWidget()
+        avatar_container.setFixedSize(72, 72)
+        avatar_container.setStyleSheet("background: transparent;")
+
+        avatar_layout = QVBoxLayout(avatar_container)
+        avatar_layout.setContentsMargins(0, 0, 0, 0)
+        avatar_layout.setSpacing(0)
+
         self.avatar_label = QLabel()
         self.avatar_label.setPixmap(QPixmap("assets/circle-user.png").scaled(72, 72, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.avatar_label.setFixedSize(72, 72)
         self.avatar_label.setStyleSheet("border-radius: 36px; background: #e3f2fd; border:none;")
-        avatar_row.addWidget(self.avatar_label)
+        avatar_layout.addWidget(self.avatar_label, alignment=Qt.AlignCenter)
+
+        self.upload_avatar_btn = QToolButton(avatar_container)
+        self.upload_avatar_btn.setIcon(QIcon("assets/avatar_camera.png"))  # Use your camera icon path
+        self.upload_avatar_btn.setIconSize(QSize(24, 24))
+        self.upload_avatar_btn.setStyleSheet("""
+            QToolButton {
+                background: #556080;
+                border-radius: 12px;
+                border: 2px solid #fff;
+                padding: 2px;
+            }
+        """)
+        self.upload_avatar_btn.setFixedSize(28, 28)
+        self.upload_avatar_btn.move(72-24, 72-24)  # Bottom-right corner
+
+        # Make sure the button is on top
+        self.upload_avatar_btn.raise_()
+
+        # Add the avatar_container to the avatar_row
+        avatar_row.addWidget(avatar_container)
+
 
         info_col = QVBoxLayout()
         self.full_name_label = QLabel("User")

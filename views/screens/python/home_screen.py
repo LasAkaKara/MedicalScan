@@ -1,6 +1,8 @@
 from PySide6.QtCore import Signal
 from views.screens.pyside.home_screen_ui import HomeScreenUI
 from PySide6.QtWidgets import QMessageBox
+from PySide6.QtGui import QPixmap, QPainter, QPainterPath, Qt
+from urllib.request import urlopen
 from services.database_service import DatabaseService
 from views.components.loading_overlay import LoadingOverlay
 
@@ -35,9 +37,36 @@ class HomeScreen(HomeScreenUI):
             if hasattr(self, "greet_label"):
                 name = user.get('full_name') or "User"
                 self.greet_label.setText(f"Hi, {name}!")
+        # Set avatar
+        avatar_url = user.get("avatar_url")
+        pixmap = None
+        if avatar_url:
+            try:
+                data = urlopen(avatar_url).read()
+                pixmap = QPixmap()
+                pixmap.loadFromData(data)
+            except Exception:
+                pixmap = QPixmap("assets/circle-user.png")
+        else:
+            pixmap = QPixmap("assets/circle-user.png")
+        if not pixmap.isNull():
+            self.avatar_label.setPixmap(self.get_rounded_pixmap(pixmap, 56))
 
     def handle_logout(self):
         reply = QMessageBox.question(self, "Logout", "Are you sure you want to logout?",
                                      QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.go_to_login.emit()
+
+    def get_rounded_pixmap(self, pixmap, size=56):
+        pixmap = pixmap.scaled(size, size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        rounded = QPixmap(size, size)
+        rounded.fill(Qt.transparent)
+        painter = QPainter(rounded)
+        painter.setRenderHint(QPainter.Antialiasing)
+        path = QPainterPath()
+        path.addEllipse(0, 0, size, size)
+        painter.setClipPath(path)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.end()
+        return rounded
