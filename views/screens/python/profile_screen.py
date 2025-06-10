@@ -457,6 +457,12 @@ from views.screens.pyside.profile_screen_ui import ProfileScreenUI, EditProfileM
 from services.cloudinary_service import upload_avatar
 from services.database_service import DatabaseService
 
+class DummySwitch:
+    def __init__(self, checked=True):
+        self._checked = checked
+    def isChecked(self):
+        return self._checked
+
 class ProfileScreen(ProfileScreenUI):
     go_to_login = Signal()
     go_to_home = Signal()
@@ -470,6 +476,8 @@ class ProfileScreen(ProfileScreenUI):
         self.change_pw_btn.clicked.connect(self.handle_change_password)
         self.notif_medication.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc thuốc", state))
         self.notif_refills.stateChanged.connect(lambda state: self.handle_notif_change("Nhắc tái đơn", state))
+        self.notif_medication = self.notif_medication if hasattr(self, "notif_medication") else DummySwitch(True)
+        self.notif_refills = self.notif_refills if hasattr(self, "notif_refills") else DummySwitch(True)
         self.upload_avatar_btn.clicked.connect(self.handle_upload_avatar)
         self.db = DatabaseService()
 
@@ -646,3 +654,5 @@ class ProfileScreen(ProfileScreenUI):
         prefs["notify_medication"] = self.notif_medication.isChecked()
         prefs["notify_refills"] = self.notif_refills.isChecked()
         self.db.update_user_preferences(user["id"], json.dumps(prefs, ensure_ascii=False))
+        if hasattr(self.parent(), "current_user_prefs"):
+            self.parent().current_user_prefs = prefs

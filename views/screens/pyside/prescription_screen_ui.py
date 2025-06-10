@@ -755,6 +755,13 @@ class PrescriptionCard(QFrame):
                 child.setStyleSheet(child.styleSheet() + f"font-family: {FONT_FAMILY};")
             med_row.setStyleSheet(med_row.styleSheet() + f"font-family: {FONT_FAMILY};")
             self.meds_layout.addWidget(med_row)
+
+            # --- Add usage instruction notice if present ---
+            usage_instruction = med.get('usage_instruction', '').strip()
+            if usage_instruction:
+                notice = QLabel("Có hướng dẫn sử dụng, hãy xem trong phần chi tiết")
+                notice.setStyleSheet("font-size: 13px; color: #F59E42; font-style: italic; margin-left: 8px; margin-bottom: 4px;")
+                self.meds_layout.addWidget(notice)
         self.main_layout.addWidget(self.meds_widget)
 
         btn_row = QHBoxLayout()

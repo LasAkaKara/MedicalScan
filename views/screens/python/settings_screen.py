@@ -221,9 +221,9 @@ class SettingsScreen(SettingsScreenUI):
         self.dark_mode_switch.setChecked(prefs.get('dark_mode', False))
         # Notification times
         notif_times = prefs.get("notification_times", {})
-        self.time_morning.setTime(self._parse_time(notif_times.get("morning", "07:00")))
-        self.time_noon.setTime(self._parse_time(notif_times.get("noon", "12:00")))
-        self.time_evening.setTime(self._parse_time(notif_times.get("evening", "18:00")))
+        self.time_morning.setTime(self._parse_time(notif_times.get("Sáng", "07:00")))
+        self.time_noon.setTime(self._parse_time(notif_times.get("Trưa", "12:00")))
+        self.time_evening.setTime(self._parse_time(notif_times.get("Tối", "19:00")))
 
 
     def _parse_time(self, tstr):
@@ -252,9 +252,9 @@ class SettingsScreen(SettingsScreenUI):
         prefs['save_original_images'] = self.save_original_switch.isChecked()
         prefs['dark_mode'] = self.dark_mode_switch.isChecked()
         prefs['notification_times'] = {
-            "morning": self.time_morning.time().toString("HH:mm"),
-            "noon": self.time_noon.time().toString("HH:mm"),
-            "evening": self.time_evening.time().toString("HH:mm"),
+            "Sáng": self.time_morning.time().toString("HH:mm"),
+            "Trưa": self.time_noon.time().toString("HH:mm"),
+            "Tối": self.time_evening.time().toString("HH:mm"),
         }
         # Now save back to DB
         success = self.db.update_user_preferences(self.current_user["id"], json.dumps(prefs, ensure_ascii=False))

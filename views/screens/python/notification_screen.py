@@ -23,58 +23,9 @@ class NotificationScreen(NotificationScreenUI):
 
     
     def load_notifications_for_today(self):
-        today = datetime.now().date()
-        user_id = self.app.current_user_id
-        prescriptions = self.db.get_user_prescriptions(user_id)
-        notifications = []
-        for presc in prescriptions:
-            presc_name = presc.get("name", "")
-            medicine_details = presc.get("medicine_details", {})
-            if isinstance(medicine_details, str):
-                try:
-                    medicine_details = json.loads(medicine_details)
-                except Exception:
-                    medicine_details = {}
-            for med in medicine_details.get("medicines", []):
-                med_name = med.get("medicine_name", "")
-                usage_times = med.get("usage_time", [])
-                duration_days = med.get("duration_days", "1")
-                try:
-                    duration_days = int(duration_days)
-                except Exception:
-                    duration_days = 1
-                # Assume prescription created_at is the start date
-                start_date = presc.get("created_at")
-                if isinstance(start_date, str):
-                    try:
-                        start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S").date()
-                    except Exception:
-                        start_date = today
-                elif isinstance(start_date, datetime):
-                    start_date = start_date.date()
-                else:
-                    start_date = today
-                # For each day in duration, if today matches, create notifications for each usage_time
-                for day_offset in range(duration_days):
-                    dose_date = start_date + timedelta(days=day_offset)
-                    if dose_date == today:
-                        for t in usage_times:
-                            # t can be dict or str
-                            if isinstance(t, dict):
-                                time_label = t.get("time", "")
-                                quantity = t.get("quantity", 1)
-                            else:
-                                time_label = t
-                                quantity = med.get("quantity_per_time", 1)
-                            notifications.append({
-                                "prescription_name": presc_name,
-                                "medicine_name": med_name,
-                                "time": time_label,
-                                "subtitle": f"{time_label}: {quantity} viên",
-                                "taken": False,  # You can load this from DB/history if implemented
-                            })
+        notifications = self.db.get_today_notifications(self.app.current_user_id)
         self.all_notifications = notifications
-        self.apply_filter()  # Show all by default
+        self.apply_filter()
 
     def apply_filter(self):
         # Get selected filter
@@ -90,7 +41,7 @@ class NotificationScreen(NotificationScreenUI):
         self.set_notifications(self.filtered_notifications)
 
     def handle_tick(self, notification, checked):
-        # Store tick in history (implement DB logic here)
+        self.db.mark_notification_taken(notification["id"])
         notification["taken"] = checked
         print(f"User {'took' if checked else 'unticked'}: {notification['title']} at {notification['subtitle']}")
 

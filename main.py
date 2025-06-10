@@ -117,10 +117,32 @@ class MedicalApp(QApplication):
     def show_home(self, email=None):
         if email:
             self.current_user_email = email
-            # Fetch user_id from DB
             user = self.login_screen.auth_controller.db_service.get_user_by_email(email)
             if user:
                 self.current_user_id = user.get("id")
+                # Load preferences for timer logic
+                self.current_user_prefs = {}
+                if user.get("preferences"):
+                    try:
+                        self.current_user_prefs = json.loads(user["preferences"])
+                    except Exception:
+                        self.current_user_prefs = {}
+                # --- Ensure notification_times is set ---
+                if "notification_times" not in self.current_user_prefs:
+                    self.current_user_prefs["notification_times"] = {
+                        "Sáng": "07:00",
+                        "Trưa": "12:00",
+                        "Tối": "19:00"
+                    }
+                    # Save back to DB
+                    self.login_screen.auth_controller.db_service.update_user_preferences(
+                        user["id"], json.dumps(self.current_user_prefs, ensure_ascii=False)
+                    )
+                # --- Generate all missed notifications up to now ---
+                notif_times = self.current_user_prefs["notification_times"]
+                due_labels = self.get_due_time_labels(notif_times)
+                for time_label in due_labels:
+                    self.settings_screen.db.generate_notification_for_time(self.current_user_id, time_label)
         self.home_screen.set_user(self.current_user_email)
         self.stack.setCurrentWidget(self.home_screen)
 
@@ -193,39 +215,63 @@ class MedicalApp(QApplication):
         user = self.settings_screen.db.get_user_by_id(self.current_user_id)
         if not user:
             return
-        prefs = {}
+        prefs = getattr(self, "current_user_prefs", {})
         if user.get("preferences"):
             try:
                 prefs = json.loads(user["preferences"])
             except Exception:
                 prefs = {}
-        notif_times = prefs.get("notification_times", {})
+        # Default notification times if not set
+        notif_times = prefs.get("notification_times", {
+            "Sáng": "07:00",
+            "Trưa": "12:00",
+            "Tối": "19:00"
+        })
+
+        def normalize_time(t):
+            if isinstance(t, str):
+                parts = t.split(":")
+                if len(parts) == 2:
+                    return f"{int(parts[0]):02d}:{int(parts[1]):02d}"
+            return t
 
         # Always get the current time and date freshly
         now_time = QTime.currentTime().toString("HH:mm")
+        now_time = normalize_time(now_time)
         now_date = QDate.currentDate().toString("yyyy-MM-dd")
 
         # Get switches state from profile screen (if loaded)
-        med_on = getattr(self.profile_screen, "notif_medication", None)
-        refill_on = getattr(self.profile_screen, "notif_refills", None)
-        med_on = med_on.isChecked() if med_on is not None else True
-        refill_on = refill_on.isChecked() if refill_on is not None else True
+        med_on = prefs.get("notify_medication", True)
+        refill_on = prefs.get("notify_refills", True)
+
 
         # Medicine alarm
         if med_on:
-            for t in ["morning", "noon", "evening"]:
-                alarm_time = notif_times.get(t)
-                # Use both time and date as key to avoid duplicate alarms after midnight
-                alarm_key = (t, now_date, now_time)
+            for time_label in ["Sáng", "Trưa", "Tối"]:
+                alarm_time = normalize_time(notif_times.get(time_label))
+                alarm_key = (time_label, now_date, now_time)
                 if alarm_time and now_time == alarm_time and alarm_key not in self.last_alarm_times:
+                    self.settings_screen.db.generate_notification_for_time(self.current_user_id, time_label)
+                    self.show_alarm_overlay(f"Đã đến giờ uống thuốc ({time_label.lower()}) rồi")
                     self.last_alarm_times.add(alarm_key)
-                    self.show_alarm_overlay("Đã đến giờ uống thuốc rồi")
-        # Clean up old times (keep only current date)
+
         self.last_alarm_times = {(k, d, v) for (k, d, v) in self.last_alarm_times if d == now_date and v == now_time}
 
     def show_alarm_overlay(self, message):
         overlay = AlarmOverlay(message, parent=self.stack)
         overlay.exec()
+    
+    def get_due_time_labels(self, notif_times):
+        now = QTime.currentTime()
+        due_labels = []
+        for time_label in ["Sáng", "Trưa", "Tối"]:
+            alarm_str = notif_times.get(time_label)
+            if not alarm_str:
+                continue
+            alarm_qt = QTime.fromString(alarm_str, "HH:mm")
+            if alarm_qt.isValid() and alarm_qt <= now:
+                due_labels.append(time_label)
+        return due_labels
 
 
 

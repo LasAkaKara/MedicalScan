@@ -107,6 +107,23 @@ class DatabaseService:
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ''')
 
+            # Create Notifications table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS medicine_notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                prescription_id INT NOT NULL,
+                medicines_json TEXT NOT NULL,
+                time_label VARCHAR(16) NOT NULL,
+                notify_date DATE NOT NULL,
+                taken BOOLEAN DEFAULT FALSE,
+                taken_at DATETIME DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (prescription_id) REFERENCES prescriptions(id)
+            );
+            ''')
+
             # Try to create scans table for tracking scan history
             try:
                 cursor.execute('''
@@ -548,7 +565,13 @@ class DatabaseService:
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-            return cursor.fetchone()
+            user = cursor.fetchone()
+            if user:
+                # Get prescription count
+                cursor.execute("SELECT COUNT(*) as count FROM prescriptions WHERE user_id = %s", (user['id'],))
+                result = cursor.fetchone()
+                user['prescription_count'] = result['count'] if result else 0
+            return user
         except Exception as e:
             print(f"Error fetching user by email: {e}")
             return None
@@ -883,6 +906,199 @@ class DatabaseService:
             print(f"Error updating user preferences: {e}")
             conn.rollback()
             return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def generate_today_notifications(self, user_id):
+        conn = self.connect()
+        if not conn:
+            return
+        cursor = conn.cursor(dictionary=True)
+        today = datetime.now().date()
+        try:
+            prescriptions = self.get_user_prescriptions(user_id)
+            for presc in prescriptions:
+                presc_id = presc["id"]
+                medicine_details = presc.get("medicine_details", {})
+                if isinstance(medicine_details, str):
+                    try:
+                        medicine_details = json.loads(medicine_details)
+                    except Exception:
+                        medicine_details = {}
+                created_at = presc.get("created_at")
+                if isinstance(created_at, str):
+                    created_at = datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S")
+                elif isinstance(created_at, datetime):
+                    pass
+                else:
+                    continue
+
+                # --- Group medicines by time_label for today ---
+                time_groups = {}
+                for med in medicine_details.get("medicines", []):
+                    med_name = med.get("medicine_name", "")
+                    qty = med.get("quantity_per_time", "")
+                    usage_times = med.get("usage_time", [])
+                    duration_days = int(''.join(filter(str.isdigit, str(med.get("duration_days", "1")))) or "1")
+                    for t in usage_times:
+                        if isinstance(t, dict):
+                            time_label = t.get("time", "")
+                        else:
+                            time_label = t
+                        # Calculate the valid days for this medicine
+                        for day_offset in range(duration_days):
+                            dose_date = created_at.date() + timedelta(days=day_offset)
+                            if dose_date == today:
+                                if time_label not in time_groups:
+                                    time_groups[time_label] = []
+                                time_groups[time_label].append({
+                                    "medicine_name": med_name,
+                                    "quantity_per_time": qty
+                                })
+                # Insert one notification per time_label
+                for time_label, meds in time_groups.items():
+                    # Check if notification already exists
+                    cursor.execute("""
+                        SELECT id FROM medicine_notifications
+                        WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s
+                    """, (user_id, presc_id, time_label, today))
+                    if not cursor.fetchone():
+                        cursor.execute("""
+                            INSERT INTO medicine_notifications (user_id, prescription_id, medicines_json, time_label, notify_date)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (user_id, presc_id, json.dumps(meds, ensure_ascii=False), time_label, today))
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
+
+    def generate_notification_for_time(self, user_id, time_label):
+        conn = self.connect()
+        if not conn:
+            return
+        cursor = conn.cursor(dictionary=True)
+        today = datetime.now().date()
+        try:
+            prescriptions = self.get_user_prescriptions(user_id)
+            for presc in prescriptions:
+                presc_id = presc["id"]
+                medicine_details = presc.get("medicine_details", {})
+                if isinstance(medicine_details, str):
+                    try:
+                        medicine_details = json.loads(medicine_details)
+                    except Exception:
+                        medicine_details = {}
+                created_at = presc.get("created_at")
+                if isinstance(created_at, str):
+                    created_at = datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S")
+                elif isinstance(created_at, datetime):
+                    pass
+                else:
+                    continue
+
+                # Group medicines for this time_label and today
+                meds = []
+                for med in medicine_details.get("medicines", []):
+                    med_name = med.get("medicine_name", "")
+                    qty = med.get("quantity_per_time", "")
+                    usage_times = med.get("usage_time", [])
+                    duration_days = int(''.join(filter(str.isdigit, str(med.get("duration_days", "1")))) or "1")
+                    for t in usage_times:
+                        t_label = t.get("time", "") if isinstance(t, dict) else t
+                        for day_offset in range(duration_days):
+                            dose_date = created_at.date() + timedelta(days=day_offset)
+                            if dose_date == today and t_label == time_label:
+                                meds.append({
+                                    "medicine_name": med_name,
+                                    "quantity_per_time": qty
+                                })
+                if meds:
+                    # Check if notification already exists
+                    cursor.execute("""
+                        SELECT id FROM medicine_notifications
+                        WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s
+                    """, (user_id, presc_id, time_label, today))
+                    if not cursor.fetchone():
+                        cursor.execute("""
+                            INSERT INTO medicine_notifications (user_id, prescription_id, medicines_json, time_label, notify_date)
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (user_id, presc_id, json.dumps(meds, ensure_ascii=False), time_label, today))
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_today_notifications(self, user_id):
+        conn = self.connect()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        today = datetime.now().date()
+        try:
+            cursor.execute("""
+                SELECT n.*, p.name as prescription_name
+                FROM medicine_notifications n
+                JOIN prescriptions p ON n.prescription_id = p.id
+                WHERE n.user_id=%s AND n.notify_date=%s
+                ORDER BY n.time_label
+            """, (user_id, today))
+            notifications = cursor.fetchall()
+            for n in notifications:
+                n["medicines"] = json.loads(n.get("medicines_json", "[]"))
+                n["time"] = n.get("time_label", "")  # Add this line for UI compatibility
+            return notifications
+        finally:
+            cursor.close()
+            conn.close()
+
+    def mark_notification_taken(self, notification_id):
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                UPDATE medicine_notifications
+                SET taken=1, taken_at=NOW()
+                WHERE id=%s
+            """, (notification_id,))
+            conn.commit()
+            return True
+        finally:
+            cursor.close()
+            conn.close()
+
+    def is_time_taken(self, user_id, prescription_id, time_label, date):
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                SELECT COUNT(*) FROM medicine_notifications
+                WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s AND taken=1
+            """, (user_id, prescription_id, time_label, date))
+            taken_count = cursor.fetchone()[0]
+            cursor.execute("""
+                SELECT COUNT(*) FROM medicine_notifications
+                WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s
+            """, (user_id, prescription_id, time_label, date))
+            total_count = cursor.fetchone()[0]
+            return taken_count == total_count and total_count > 0
+        finally:
+            cursor.close()
+            conn.close()
+
+    def cleanup_old_notifications(self):
+        conn = self.connect()
+        if not conn:
+            return
+        cursor = conn.cursor()
+        today = datetime.now().date()
+        try:
+            cursor.execute("DELETE FROM medicine_notifications WHERE notify_date < %s", (today,))
+            conn.commit()
         finally:
             cursor.close()
             conn.close()

@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QIcon, QFont, QColor
+from themes import FONT_SIZE_MD, FONT_SIZE_LG, PRIMARY_COLOR, TEXT_COLOR, HINT_COLOR
 
 class NotificationItem(QFrame):
     ticked = Signal(dict, bool)  # (notification, checked)
@@ -16,6 +17,7 @@ class NotificationItem(QFrame):
                 background: #fff;
                 border-radius: 14px;
                 margin-bottom: 10px;
+                font-family: 'Roboto', sans-serif;
             }
         """)
         # Add shadow
@@ -27,19 +29,27 @@ class NotificationItem(QFrame):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 10, 16, 10)
-        layout.setSpacing(12)
+        layout.setSpacing(6)
 
         # Info
         info_layout = QVBoxLayout()
         presc_label = QLabel(f"Đơn: {notification.get('prescription_name', '')}")
-        presc_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #406D96;")
+        presc_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; font-weight: bold; color: {PRIMARY_COLOR};")
         info_layout.addWidget(presc_label)
-        title = QLabel(notification.get("medicine_name", ""))
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #344054;")
-        info_layout.addWidget(title)
-        subtitle = QLabel(notification.get("subtitle", ""))
-        subtitle.setStyleSheet("font-size: 13px; color: #406D96;")
-        info_layout.addWidget(subtitle)
+
+        # Medicine time label
+        time_label = QLabel(f"{notification.get('time', '')}:")
+        time_label.setStyleSheet(f"font-size: 15px; color: #406D96; font-weight: bold;")
+        info_layout.addWidget(time_label)
+
+        # List medicines vertically
+        for med in notification.get("medicines", []):
+            name = med.get("medicine_name", "")
+            qty = med.get("quantity_per_time", "")
+            med_lbl = QLabel(f"- {name} ({qty})" if qty else f"- {name}")
+            med_lbl.setStyleSheet("font-size: 15px; color: #344054; margin-left: 8px;")
+            info_layout.addWidget(med_lbl)
+            
         layout.addLayout(info_layout)
 
         layout.addStretch()
@@ -47,12 +57,37 @@ class NotificationItem(QFrame):
         # Tick checkbox
         self.tick = QCheckBox()
         self.tick.setChecked(notification.get("taken", False))
-        self.tick.setStyleSheet("QCheckBox { font-size: 18px; }")
+        self.tick.setStyleSheet("""
+            QCheckBox::indicator {
+                width: 72px;
+                height: 72px;
+            }
+            QCheckBox {
+                font-size: 18px;
+            }
+        """)
         self.tick.stateChanged.connect(self.on_tick)
         layout.addWidget(self.tick)
 
+        # "Đã uống" label with tick icon, hidden by default
+        self.drunk_label = QLabel()
+        self.drunk_label.setStyleSheet("font-size: 15px; color: #43a047; font-weight: bold; margin-left: 8px;")
+        self.drunk_label.setVisible(self.tick.isChecked())
+        if self.tick.isChecked():
+            self.drunk_label.setText("✔ Đã uống")
+        else:
+            self.drunk_label.setText("")
+        layout.addWidget(self.drunk_label)
+
     def on_tick(self, state):
         self.ticked.emit(self.notification, bool(state))
+        if state:
+            self.drunk_label.setText("✔ Đã uống")
+            self.drunk_label.setVisible(True)
+            self.tick.setVisible(False)
+        else:
+            self.drunk_label.setText("")
+            self.drunk_label.setVisible(False)
 
 class NotificationScreenUI(QWidget):
     def __init__(self, parent=None):
