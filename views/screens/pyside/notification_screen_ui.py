@@ -9,9 +9,10 @@ from themes import FONT_SIZE_MD, FONT_SIZE_LG, PRIMARY_COLOR, TEXT_COLOR, HINT_C
 class NotificationItem(QFrame):
     ticked = Signal(dict, bool)  # (notification, checked)
 
-    def __init__(self, notification, parent=None):
+    def __init__(self, notification, tick_handler=None, parent=None):
         super().__init__(parent)
         self.notification = notification
+        self.tick_handler = tick_handler  # Store the handler function
         self.setStyleSheet("""
             QFrame {
                 background: #fff;
@@ -54,9 +55,12 @@ class NotificationItem(QFrame):
 
         layout.addStretch()
 
+        # Check the status from the notification
+        is_taken = notification.get("taken", False) or notification.get("status") == "taken"
+
         # Tick checkbox
         self.tick = QCheckBox()
-        self.tick.setChecked(notification.get("taken", False))
+        self.tick.setChecked(is_taken)
         self.tick.setStyleSheet("""
             QCheckBox::indicator {
                 width: 72px;
@@ -72,15 +76,22 @@ class NotificationItem(QFrame):
         # "Đã uống" label with tick icon, hidden by default
         self.drunk_label = QLabel()
         self.drunk_label.setStyleSheet("font-size: 15px; color: #43a047; font-weight: bold; margin-left: 8px;")
-        self.drunk_label.setVisible(self.tick.isChecked())
-        if self.tick.isChecked():
+        self.drunk_label.setVisible(is_taken)
+        if is_taken:
             self.drunk_label.setText("✔ Đã uống")
+            self.tick.setVisible(False)
         else:
             self.drunk_label.setText("")
         layout.addWidget(self.drunk_label)
 
     def on_tick(self, state):
+        # Call the handler function directly if provided
+        if self.tick_handler:
+            self.tick_handler(self.notification, bool(state))
+        
+        # Also emit the signal for any other listeners
         self.ticked.emit(self.notification, bool(state))
+        
         if state:
             self.drunk_label.setText("✔ Đã uống")
             self.drunk_label.setVisible(True)
@@ -88,11 +99,13 @@ class NotificationItem(QFrame):
         else:
             self.drunk_label.setText("")
             self.drunk_label.setVisible(False)
+            self.tick.setVisible(True)
 
 class NotificationScreenUI(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Thông báo")
+        self.tick_handler = None  # Will be set by the NotificationScreen
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignTop)
         main_layout.setContentsMargins(16, 16, 16, 16)
@@ -194,5 +207,5 @@ class NotificationScreenUI(QWidget):
                 widget.setParent(None)
         # Add new
         for notif in notifications:
-            item = NotificationItem(notif)
+            item = NotificationItem(notif, tick_handler=self.tick_handler)
             self.layout.addWidget(item)

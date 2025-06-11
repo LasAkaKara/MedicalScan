@@ -19,10 +19,16 @@ class NotificationScreen(NotificationScreenUI):
         self.all_notifications = []
         self.filtered_notifications = []
         self.current_filter = "Tất cả"
+        
+        # Set the tick handler for the UI
+        self.tick_handler = self.handle_tick
 
-
-    
     def load_notifications_for_today(self):
+        """Load notifications for today and mark any missed ones from previous days"""
+        # First, mark any missed notifications from previous days
+        self.db.mark_missed_notifications()
+        
+        # Then load today's notifications
         notifications = self.db.get_today_notifications(self.app.current_user_id)
         self.all_notifications = notifications
         self.apply_filter()
@@ -41,9 +47,26 @@ class NotificationScreen(NotificationScreenUI):
         self.set_notifications(self.filtered_notifications)
 
     def handle_tick(self, notification, checked):
-        self.db.mark_notification_taken(notification["id"])
-        notification["taken"] = checked
-        print(f"User {'took' if checked else 'unticked'}: {notification['title']} at {notification['subtitle']}")
+        """Handle when user ticks/unticks a notification"""
+        notification_id = notification["id"]
+        
+        if checked:
+            # Mark as taken
+            success = self.db.mark_notification_taken(notification_id)
+            if success:
+                notification["taken"] = True
+                notification["status"] = "taken"
+                print(f"Marked notification {notification_id} as taken")
+        else:
+            # Mark as not taken (undo)
+            success = self.db.mark_notification_untaken(notification_id)
+            if success:
+                notification["taken"] = False
+                notification["status"] = "pending"
+                print(f"Marked notification {notification_id} as pending")
+        
+        # Refresh the display
+        self.apply_filter()
 
     def handle_back(self):
         self.go_back.emit()

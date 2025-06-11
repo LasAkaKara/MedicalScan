@@ -107,7 +107,7 @@ class DatabaseService:
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             ''')
 
-            # Create Notifications table
+            # Create Notifications table with enhanced status tracking
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS medicine_notifications (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -118,11 +118,29 @@ class DatabaseService:
                 notify_date DATE NOT NULL,
                 taken BOOLEAN DEFAULT FALSE,
                 taken_at DATETIME DEFAULT NULL,
+                status ENUM('pending', 'taken', 'missed') DEFAULT 'pending',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id),
-                FOREIGN KEY (prescription_id) REFERENCES prescriptions(id)
+                FOREIGN KEY (prescription_id) REFERENCES prescriptions(id),
+                INDEX idx_user_date (user_id, notify_date),
+                INDEX idx_status_date (status, notify_date)
             );
             ''')
+
+            # Check if status column exists, if not add it
+            try:
+                cursor.execute("SHOW COLUMNS FROM medicine_notifications LIKE 'status'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE medicine_notifications ADD COLUMN status ENUM('pending', 'taken', 'missed') DEFAULT 'pending'")
+                    print("Added status column to medicine_notifications table")
+                
+                cursor.execute("SHOW COLUMNS FROM medicine_notifications LIKE 'updated_at'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE medicine_notifications ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+                    print("Added updated_at column to medicine_notifications table")
+            except Exception as e:
+                print(f"Error checking/adding notification columns: {e}")
 
             # Try to create scans table for tracking scan history
             try:
@@ -1053,6 +1071,7 @@ class DatabaseService:
             conn.close()
 
     def mark_notification_taken(self, notification_id):
+        """Mark a notification as taken and update status"""
         conn = self.connect()
         if not conn:
             return False
@@ -1060,7 +1079,7 @@ class DatabaseService:
         try:
             cursor.execute("""
                 UPDATE medicine_notifications
-                SET taken=1, taken_at=NOW()
+                SET taken=1, taken_at=NOW(), status='taken', updated_at=NOW()
                 WHERE id=%s
             """, (notification_id,))
             conn.commit()
@@ -1069,7 +1088,99 @@ class DatabaseService:
             cursor.close()
             conn.close()
 
+    def mark_notification_untaken(self, notification_id):
+        """Mark a notification as not taken (undo taken status)"""
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                UPDATE medicine_notifications
+                SET taken=0, taken_at=NULL, status='pending', updated_at=NOW()
+                WHERE id=%s
+            """, (notification_id,))
+            conn.commit()
+            return True
+        finally:
+            cursor.close()
+            conn.close()
+
+    def mark_missed_notifications(self, target_date=None):
+        """Mark all pending notifications from previous days as missed"""
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            if target_date is None:
+                target_date = datetime.now().date()
+            
+            cursor.execute("""
+                UPDATE medicine_notifications 
+                SET status='missed', updated_at=NOW()
+                WHERE notify_date < %s AND status='pending'
+            """, (target_date,))
+            
+            affected_rows = cursor.rowcount
+            conn.commit()
+            print(f"Marked {affected_rows} notifications as missed for dates before {target_date}")
+            return True
+        except Exception as e:
+            print(f"Error marking missed notifications: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_notification_status_for_date(self, user_id, prescription_id, time_label, date):
+        """Get the status of a notification for a specific date and time"""
+        conn = self.connect()
+        if not conn:
+            return 'none'  # No notification exists
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT status, taken, taken_at FROM medicine_notifications
+                WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s
+                LIMIT 1
+            """, (user_id, prescription_id, time_label, date))
+            
+            result = cursor.fetchone()
+            if not result:
+                return 'none'  # No notification exists
+            
+            return result['status']
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_all_notification_statuses_for_date(self, user_id, date):
+        """Get all notification statuses for a specific date"""
+        conn = self.connect()
+        if not conn:
+            return {}
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT prescription_id, time_label, status, taken, taken_at 
+                FROM medicine_notifications
+                WHERE user_id=%s AND notify_date=%s
+            """, (user_id, date))
+            
+            results = cursor.fetchall()
+            statuses = {}
+            for result in results:
+                key = (result['prescription_id'], result['time_label'])
+                statuses[key] = result['status']
+            
+            return statuses
+        finally:
+            cursor.close()
+            conn.close()
+
     def is_time_taken(self, user_id, prescription_id, time_label, date):
+        """Check if a specific time slot is marked as taken"""
         conn = self.connect()
         if not conn:
             return False
@@ -1077,28 +1188,55 @@ class DatabaseService:
         try:
             cursor.execute("""
                 SELECT COUNT(*) FROM medicine_notifications
-                WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s AND taken=1
+                WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s AND status='taken'
             """, (user_id, prescription_id, time_label, date))
             taken_count = cursor.fetchone()[0]
-            cursor.execute("""
-                SELECT COUNT(*) FROM medicine_notifications
-                WHERE user_id=%s AND prescription_id=%s AND time_label=%s AND notify_date=%s
-            """, (user_id, prescription_id, time_label, date))
-            total_count = cursor.fetchone()[0]
-            return taken_count == total_count and total_count > 0
+            return taken_count > 0
         finally:
             cursor.close()
             conn.close()
 
     def cleanup_old_notifications(self):
+        """Clean up old notifications and mark missed ones"""
         conn = self.connect()
         if not conn:
             return
         cursor = conn.cursor()
         today = datetime.now().date()
         try:
-            cursor.execute("DELETE FROM medicine_notifications WHERE notify_date < %s", (today,))
+            # First mark pending notifications from previous days as missed
+            cursor.execute("""
+                UPDATE medicine_notifications 
+                SET status='missed', updated_at=NOW()
+                WHERE notify_date < %s AND status='pending'
+            """, (today,))
+            
+            missed_count = cursor.rowcount
+            
+            # Optionally delete very old notifications (older than 30 days)
+            old_date = today - timedelta(days=30)
+            cursor.execute("DELETE FROM medicine_notifications WHERE notify_date < %s", (old_date,))
+            
+            deleted_count = cursor.rowcount
             conn.commit()
+            
+            print(f"Marked {missed_count} notifications as missed, deleted {deleted_count} old notifications")
+        finally:
+            cursor.close()
+            conn.close()
+
+    def get_incomplete_notifications(self, user_id, date):
+        """Get incomplete (missed) notifications for a specific date"""
+        conn = self.connect()
+        if not conn:
+            return []
+        cursor = conn.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT * FROM medicine_notifications
+                WHERE user_id=%s AND notify_date=%s AND status IN ('pending', 'missed')
+            """, (user_id, date))
+            return cursor.fetchall()
         finally:
             cursor.close()
             conn.close()

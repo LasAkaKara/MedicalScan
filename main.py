@@ -25,10 +25,18 @@ class MedicalApp(QApplication):
         self.current_user_id = None
         self.previous_screen = None
         self.stack = QStackedWidget()
+        
+        # Timer for checking alarms and cleanup
         self.alarm_timer = QTimer(self)
         self.alarm_timer.timeout.connect(self.check_alarm_times)
         self.alarm_timer.start(1000)
         self.last_alarm_times = set()
+        
+        # Timer for daily cleanup (check every hour)
+        self.cleanup_timer = QTimer(self)
+        self.cleanup_timer.timeout.connect(self.daily_cleanup_check)
+        self.cleanup_timer.start(3600000)  # 1 hour in milliseconds
+        self.last_cleanup_date = None
 
         # Instantiate screens
         self.login_screen = LoginScreen()
@@ -87,8 +95,6 @@ class MedicalApp(QApplication):
         self.add_prescription_screen.go_to_prescription.connect(self.show_prescription)
         self.notification_screen.go_back.connect(self.handle_notification_back)
         self.home_screen.go_to_notification.connect(self.show_notification)
-
-
 
         # Verification navigation
         self.login_screen.go_to_verify.connect(self.show_verification)
@@ -273,6 +279,18 @@ class MedicalApp(QApplication):
                 due_labels.append(time_label)
         return due_labels
 
+    def daily_cleanup_check(self):
+        """Check if we need to run daily cleanup (mark missed notifications)"""
+        current_date = QDate.currentDate().toPython()
+        
+        # Run cleanup once per day
+        if self.last_cleanup_date != current_date:
+            self.last_cleanup_date = current_date
+            
+            # Mark missed notifications from previous days
+            if hasattr(self, 'settings_screen') and self.settings_screen.db:
+                self.settings_screen.db.mark_missed_notifications()
+                print(f"Daily cleanup completed for {current_date}")
 
 
 if __name__ == '__main__':

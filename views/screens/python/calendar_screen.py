@@ -1,7 +1,7 @@
 from views.screens.pyside.calendar_screen_ui import CalendarScreenUI
 from PySide6.QtCore import QDate, Signal
 from services.database_service import DatabaseService
-from PySide6.QtWidgets import QLabel, QFrame, QVBoxLayout
+from PySide6.QtWidgets import QLabel, QFrame, QVBoxLayout, QHBoxLayout
 from datetime import datetime, timedelta
 import json
 from themes import FONT_FAMILY, FONT_SIZE_LG
@@ -36,6 +36,9 @@ class CalendarScreen(CalendarScreenUI):
         prescriptions = self.db.get_user_prescriptions(user_id)
         found = False
         selected_date = date.toPython()
+
+        # Get notification statuses for this date
+        notification_statuses = self.db.get_all_notification_statuses_for_date(user_id, selected_date)
 
         # Group all medicines by time of day
         time_groups = {"Sáng": [], "Trưa": [], "Tối": []}
@@ -78,6 +81,8 @@ class CalendarScreen(CalendarScreenUI):
 
             if created_date <= selected_date < created_date + timedelta(days=duration_days):
                 found = True
+                prescription_id = p.get("id")
+                
                 # Group medicines by time
                 for med in medicines:
                     usage_times = med.get("usage_time", [])
@@ -86,41 +91,154 @@ class CalendarScreen(CalendarScreenUI):
                         for t in usage_times:
                             label = t.get("time", "")
                             if label in time_groups:
-                                time_groups[label].append(med.get("medicine_name", ""))
+                                # Check notification status for this medicine time
+                                status_key = (prescription_id, label)
+                                status = notification_statuses.get(status_key, 'none')
+                                
+                                time_groups[label].append({
+                                    "name": med.get("medicine_name", ""),
+                                    "status": status,
+                                    "prescription_id": prescription_id
+                                })
                     else:
                         for label in usage_times:
                             if label in time_groups:
-                                time_groups[label].append(med.get("medicine_name", ""))
+                                # Check notification status for this medicine time
+                                status_key = (prescription_id, label)
+                                status = notification_statuses.get(status_key, 'none')
+                                
+                                time_groups[label].append({
+                                    "name": med.get("medicine_name", ""),
+                                    "status": status,
+                                    "prescription_id": prescription_id
+                                })
 
-        # Display grouped medicines
+        # Display grouped medicines with status overlays
         if found:
             for time_label in ["Sáng", "Trưa", "Tối"]:
                 meds = time_groups[time_label]
                 if meds:
-                    card = QFrame()
-                    card.setStyleSheet("background: #fafdff; border-radius: 12px; border: 1px solid #e0e0e0;")
-                    layout = QVBoxLayout(card)
-                    time_lbl = QLabel(f"<b>{time_label}</b>")
-                    time_lbl.setStyleSheet("font-size: 16px; color: #406D96; border: none;")
-                    layout.addWidget(time_lbl)
-                    for med in medicines:
-                        # Check if this medicine is in this time group
-                        usage_times = med.get("usage_time", [])
-                        # Normalize usage_times to list of strings
-                        times = []
-                        if usage_times and isinstance(usage_times[0], dict):
-                            times = [t.get("time", "") for t in usage_times]
-                        else:
-                            times = usage_times
-                        if time_label in times:
-                            name = med.get("medicine_name", "")
-                            qty = med.get("quantity_per_time", "")
-                            med_lbl = QLabel(f"- {name} ({qty})" if qty else f"- {name}")
-                            med_lbl.setStyleSheet("font-size: 15px; color: #222; border: none; margin-left: 8px;")
-                            layout.addWidget(med_lbl)
+                    card = self.create_medicine_time_card(time_label, meds, selected_date)
                     self.prescription_list_layout.addWidget(card)
         else:
-            self.prescription_list_layout.addWidget(QLabel("Không có đơn thuốc nào cho ngày này."))
+            no_prescription_label = QLabel("Không có đơn thuốc nào cho ngày này.")
+            no_prescription_label.setStyleSheet("font-size: 15px; color: #666; text-align: center; padding: 20px;")
+            self.prescription_list_layout.addWidget(no_prescription_label)
+
+    def create_medicine_time_card(self, time_label, medicines, selected_date):
+        """Create a card for medicines at a specific time with status overlay"""
+        card = QFrame()
+        
+        # Determine overall status for this time slot
+        statuses = [med["status"] for med in medicines]
+        if all(status == "taken" for status in statuses):
+            overall_status = "taken"
+            card_color = "#f0f9ff"  # Light blue for taken
+            border_color = "#22c55e"  # Green border
+        elif any(status == "missed" for status in statuses):
+            overall_status = "missed"
+            card_color = "#fef2f2"  # Light red for missed
+            border_color = "#ef4444"  # Red border
+        elif selected_date < datetime.now().date() and any(status == "pending" for status in statuses):
+            overall_status = "missed"
+            card_color = "#fef2f2"  # Light red for missed
+            border_color = "#ef4444"  # Red border
+        else:
+            overall_status = "pending"
+            card_color = "#fafdff"  # Default light color
+            border_color = "#e0e0e0"  # Default border
+        
+        card.setStyleSheet(f"""
+            QFrame {{
+                background: {card_color};
+                border-radius: 12px;
+                border: 2px solid {border_color};
+                margin-bottom: 8px;
+            }}
+        """)
+        
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
+        
+        # Header with time and status overlay
+        header_layout = QHBoxLayout()
+        
+        time_lbl = QLabel(f"<b>{time_label}</b>")
+        time_lbl.setStyleSheet("font-size: 16px; color: #406D96; border: none;")
+        header_layout.addWidget(time_lbl)
+        
+        header_layout.addStretch()
+        
+        # Status overlay
+        if overall_status == "taken":
+            status_overlay = QLabel("✔ Đã uống")
+            status_overlay.setStyleSheet("""
+                background: #22c55e;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: bold;
+            """)
+        elif overall_status == "missed":
+            status_overlay = QLabel("✗ Chưa uống")
+            status_overlay.setStyleSheet("""
+                background: #ef4444;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: bold;
+            """)
+        else:
+            status_overlay = QLabel("⏳ Chờ uống")
+            status_overlay.setStyleSheet("""
+                background: #f59e0b;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: bold;
+            """)
+        
+        header_layout.addWidget(status_overlay)
+        layout.addLayout(header_layout)
+        
+        # Medicine list
+        for med in medicines:
+            name = med["name"]
+            med_status = med["status"]
+            
+            med_layout = QHBoxLayout()
+            
+            # Medicine name
+            med_lbl = QLabel(f"• {name}")
+            if med_status == "taken":
+                med_lbl.setStyleSheet("font-size: 14px; color: #16a34a; border: none; margin-left: 8px;")
+            elif med_status == "missed":
+                med_lbl.setStyleSheet("font-size: 14px; color: #dc2626; border: none; margin-left: 8px;")
+            else:
+                med_lbl.setStyleSheet("font-size: 14px; color: #374151; border: none; margin-left: 8px;")
+            
+            med_layout.addWidget(med_lbl)
+            med_layout.addStretch()
+            
+            # Individual medicine status icon
+            if med_status == "taken":
+                status_icon = QLabel("✓")
+                status_icon.setStyleSheet("color: #16a34a; font-weight: bold; font-size: 14px;")
+            elif med_status == "missed":
+                status_icon = QLabel("✗")
+                status_icon.setStyleSheet("color: #dc2626; font-weight: bold; font-size: 14px;")
+            else:
+                status_icon = QLabel("○")
+                status_icon.setStyleSheet("color: #9ca3af; font-weight: bold; font-size: 14px;")
+            
+            med_layout.addWidget(status_icon)
+            layout.addLayout(med_layout)
+        
+        return card
     
     def _on_date_clicked(self, day):
         self.selected_date = QDate(self.current_year, self.current_month, day)
@@ -152,3 +270,6 @@ class CalendarScreen(CalendarScreenUI):
             month = 1
             year += 1
         self.set_month(year, month)
+    
+    def is_time_taken(self, user_id, prescription_id, time_label, date):
+        return self.db.is_time_taken(user_id, prescription_id, time_label, date)
