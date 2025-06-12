@@ -31,6 +31,12 @@ class NotificationScreen(NotificationScreenUI):
         # Then load today's notifications
         notifications = self.db.get_today_notifications(self.app.current_user_id)
         self.all_notifications = notifications
+        
+        # Debug: Print loaded notifications
+        print(f"Loaded {len(notifications)} notifications:")
+        for notif in notifications:
+            print(f"  - ID: {notif.get('id')}, Time: {notif.get('time')}, Prescription: {notif.get('prescription_name')}")
+        
         self.apply_filter()
 
     def apply_filter(self):
@@ -38,12 +44,33 @@ class NotificationScreen(NotificationScreenUI):
         checked_btn = self.filter_group.checkedButton()
         if checked_btn:
             self.current_filter = checked_btn.text()
+        
+        print(f"Applying filter: '{self.current_filter}'")
+        
         if self.current_filter == "Tất cả":
             self.filtered_notifications = self.all_notifications
         else:
-            self.filtered_notifications = [
-                n for n in self.all_notifications if n.get("time", "") == self.current_filter
-            ]
+            # Extract the time part from the button text (remove emojis)
+            filter_time = self.current_filter
+            if "🌅 Sáng" in self.current_filter:
+                filter_time = "Sáng"
+            elif "☀️ Trưa" in self.current_filter:
+                filter_time = "Trưa"
+            elif "🌙 Tối" in self.current_filter:
+                filter_time = "Tối"
+            
+            print(f"Filtering by time: '{filter_time}'")
+            
+            # Filter notifications by time
+            self.filtered_notifications = []
+            for n in self.all_notifications:
+                notif_time = n.get("time", "").strip()
+                print(f"  Checking notification time: '{notif_time}' against filter: '{filter_time}'")
+                if notif_time == filter_time:
+                    self.filtered_notifications.append(n)
+            
+            print(f"Filtered result: {len(self.filtered_notifications)} notifications")
+        
         self.set_notifications(self.filtered_notifications)
 
     def handle_tick(self, notification, checked):

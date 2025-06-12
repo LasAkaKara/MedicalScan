@@ -3,9 +3,88 @@ from PySide6.QtWidgets import (
     QCheckBox, QButtonGroup, QButtonGroup, QRadioButton, QSizePolicy, QGraphicsDropShadowEffect
 )
 from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QIcon, QFont, QColor
+from PySide6.QtGui import QIcon, QFont, QColor, QPainter, QPen, QBrush
 from themes import FONT_SIZE_MD, FONT_SIZE_LG, PRIMARY_COLOR, TEXT_COLOR, HINT_COLOR
 
+class ConfirmButton(QPushButton):
+    """Custom confirmation button for medicine intake"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.is_confirmed = False
+        self.setText("Xác nhận đã uống")
+        self.setCheckable(True)
+        self.setFixedHeight(40)
+        self.setMinimumWidth(140)
+        self.update_style()
+        
+    def update_style(self):
+        if self.is_confirmed:
+            self.setStyleSheet("""
+                QPushButton {
+                    background: #22c55e;
+                    color: white;
+                    border: 2px solid #22c55e;
+                    border-radius: 20px;
+                    font-size: 13px;
+                    font-weight: bold;
+                    padding: 8px 16px;
+                }
+                QPushButton:hover {
+                    background: #16a34a;
+                    border-color: #16a34a;
+                }
+                QPushButton:pressed {
+                    background: #15803d;
+                }
+            """)
+            self.setText("Đã uống")
+        else:
+            self.setStyleSheet("""
+                QPushButton {
+                    background: #ffffff;
+                    color: #406D96;
+                    border: 2px solid #406D96;
+                    border-radius: 20px;
+                    font-size: 13px;
+                    font-weight: bold;
+                    padding: 8px 16px;
+                }
+                QPushButton:hover {
+                    background: #f0f9ff;
+                    border-color: #2563eb;
+                    color: #2563eb;
+                }
+                QPushButton:pressed {
+                    background: #dbeafe;
+                }
+            """)
+            self.setText("Xác nhận đã uống")
+    
+    def set_confirmed(self, confirmed):
+        self.is_confirmed = confirmed
+        self.setChecked(confirmed)
+        self.update_style()
+
+class CircularCheckBox(QCheckBox):
+    """Custom circular checkbox that's bigger and easier to tap"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(60, 60)  # Make it bigger for easier tapping
+        self.setStyleSheet("""
+            QCheckBox {
+                background: transparent;
+                border: none;
+            }
+            QCheckBox::indicator {
+                width: 0px;
+                height: 0px;
+                background: transparent;
+                border: none;
+            }
+        """)
+    
 class NotificationItem(QFrame):
     ticked = Signal(dict, bool)  # (notification, checked)
 
@@ -28,13 +107,18 @@ class NotificationItem(QFrame):
         shadow.setColor(QColor(0, 0, 0, 40))
         self.setGraphicsEffect(shadow)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(16, 10, 16, 10)
-        layout.setSpacing(6)
+        # Main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(16, 12, 16, 12)
+        main_layout.setSpacing(12)
 
-        # Info
+        # Top section with prescription info
+        top_layout = QHBoxLayout()
+        top_layout.setSpacing(12)
+
+        # Info section
         info_layout = QVBoxLayout()
-        presc_label = QLabel(f"Đơn: {notification.get('prescription_name', '')}")
+        presc_label = QLabel(f"{notification.get('prescription_name', '')}")
         presc_label.setStyleSheet(f"font-size: {FONT_SIZE_MD}px; font-weight: bold; color: {PRIMARY_COLOR};")
         info_layout.addWidget(presc_label)
 
@@ -47,59 +131,40 @@ class NotificationItem(QFrame):
         for med in notification.get("medicines", []):
             name = med.get("medicine_name", "")
             qty = med.get("quantity_per_time", "")
-            med_lbl = QLabel(f"- {name} ({qty})" if qty else f"- {name}")
-            med_lbl.setStyleSheet("font-size: 15px; color: #344054; margin-left: 8px;")
+            med_lbl = QLabel(f"{name} ({qty})" if qty else f"{name}")
+            med_lbl.setStyleSheet("font-size: 14px; color: #374151; margin-left: 8px;")
+            med_lbl.setWordWrap(True)  # Allow text wrapping for long medicine names
             info_layout.addWidget(med_lbl)
             
-        layout.addLayout(info_layout)
+        top_layout.addLayout(info_layout)
+        main_layout.addLayout(top_layout)
 
-        layout.addStretch()
+        # Bottom section with confirmation button
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()  # Push button to the right
 
         # Check the status from the notification
         is_taken = notification.get("taken", False) or notification.get("status") == "taken"
 
-        # Tick checkbox
-        self.tick = QCheckBox()
-        self.tick.setChecked(is_taken)
-        self.tick.setStyleSheet("""
-            QCheckBox::indicator {
-                width: 72px;
-                height: 72px;
-            }
-            QCheckBox {
-                font-size: 18px;
-            }
-        """)
-        self.tick.stateChanged.connect(self.on_tick)
-        layout.addWidget(self.tick)
+        # Confirmation button
+        self.confirm_btn = ConfirmButton()
+        self.confirm_btn.set_confirmed(is_taken)
+        self.confirm_btn.clicked.connect(self.on_confirm_clicked)
+        
+        button_layout.addWidget(self.confirm_btn)
+        main_layout.addLayout(button_layout)
 
-        # "Đã uống" label with tick icon, hidden by default
-        self.drunk_label = QLabel()
-        self.drunk_label.setStyleSheet("font-size: 15px; color: #43a047; font-weight: bold; margin-left: 8px;")
-        self.drunk_label.setVisible(is_taken)
-        if is_taken:
-            self.drunk_label.setText("✔ Đã uống")
-            self.tick.setVisible(False)
-        else:
-            self.drunk_label.setText("")
-        layout.addWidget(self.drunk_label)
-
-    def on_tick(self, state):
+    def on_confirm_clicked(self):
+        # Toggle the confirmation state
+        new_state = not self.confirm_btn.is_confirmed
+        self.confirm_btn.set_confirmed(new_state)
+        
         # Call the handler function directly if provided
         if self.tick_handler:
-            self.tick_handler(self.notification, bool(state))
+            self.tick_handler(self.notification, new_state)
         
         # Also emit the signal for any other listeners
-        self.ticked.emit(self.notification, bool(state))
-        
-        if state:
-            self.drunk_label.setText("✔ Đã uống")
-            self.drunk_label.setVisible(True)
-            self.tick.setVisible(False)
-        else:
-            self.drunk_label.setText("")
-            self.drunk_label.setVisible(False)
-            self.tick.setVisible(True)
+        self.ticked.emit(self.notification, new_state)
 
 class NotificationScreenUI(QWidget):
     def __init__(self, parent=None):
@@ -130,24 +195,32 @@ class NotificationScreenUI(QWidget):
         filter_row.setSpacing(0)
         self.filter_group = QButtonGroup(self)
         self.filter_all = QPushButton("Tất cả")
-        self.filter_morning = QPushButton("Sáng")
-        self.filter_noon = QPushButton("Trưa")
-        self.filter_evening = QPushButton("Tối")
+        self.filter_morning = QPushButton("🌅 Sáng")
+        self.filter_noon = QPushButton("☀️ Trưa")
+        self.filter_evening = QPushButton("🌙 Tối")
         for btn in [self.filter_all, self.filter_morning, self.filter_noon, self.filter_evening]:
             btn.setCheckable(True)
             btn.setMinimumWidth(80)
+            btn.setMinimumHeight(40)  # Make filter buttons taller for easier tapping
             btn.setStyleSheet("""
                 QPushButton {
                     border: none;
                     background: #e3eaf6;
                     color: #406D96;
                     font-weight: bold;
-                    padding: 8px 0;
+                    padding: 10px 8px;
                     border-radius: 0;
+                    font-size: 14px;
                 }
                 QPushButton:checked {
                     background: #406D96;
                     color: #fff;
+                }
+                QPushButton:hover {
+                    background: #d1d9e6;
+                }
+                QPushButton:checked:hover {
+                    background: #2d5a87;
                 }
                 QPushButton:first-child {
                     border-top-left-radius: 12px;
@@ -172,14 +245,17 @@ class NotificationScreenUI(QWidget):
             QScrollArea > QWidget { background: transparent; }
             QScrollBar:vertical {
                 background: transparent;
-                width: 6px;
+                width: 8px;
                 margin: 4px 2px 4px 0px;
-                border-radius: 3px;
+                border-radius: 4px;
             }
             QScrollBar::handle:vertical {
                 background: #D0D5DD;
                 min-height: 36px;
-                border-radius: 3px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #9CA3AF;
             }
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
@@ -195,7 +271,7 @@ class NotificationScreenUI(QWidget):
         self.container = QWidget()
         self.layout = QVBoxLayout(self.container)
         self.layout.setAlignment(Qt.AlignTop)
-        self.layout.setSpacing(8)
+        self.layout.setSpacing(12)  # Increased spacing between notification items
         self.container.setStyleSheet("background: transparent;")
         scroll.setWidget(self.container)
 
