@@ -55,4 +55,47 @@ class AuthController:
     def validate_email(self, email):
         import re
         pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-        return re.match(pattern, email) is not None 
+        return re.match(pattern, email) is not None
+
+    def check_email_exists(self, email):
+        """Check if email already exists in the database without sending verification code"""
+        if not email or not self.validate_email(email):
+            return True  # Return True (exists) for invalid emails to prevent further processing
+            
+        return self.db_service.email_exists(email)
+        
+    def send_reset_password_code(self, email):
+        """Send a password reset verification code"""
+        if not email or not self.validate_email(email):
+            return False, "Email không hợp lệ"
+            
+        # Check if user exists
+        if not self.db_service.email_exists(email):
+            return False, "Email không tồn tại trong hệ thống"
+            
+        # Generate and send reset code
+        reset_code = self.email_service.send_reset_password_email(email)
+        if not reset_code:
+            return False, "Không thể gửi mã xác thực"
+            
+        # Save reset code in database
+        if self.db_service.save_reset_code(email, reset_code):
+            return True, "Đã gửi mã xác thực"
+        return False, "Không thể lưu mã xác thực"
+        
+    def reset_password(self, email, code, new_password):
+        """Reset the user's password using verification code"""
+        if not email or not code or not new_password:
+            return False, "Vui lòng điền đầy đủ thông tin"
+            
+        if len(new_password) < 6:
+            return False, "Mật khẩu phải có ít nhất 6 ký tự"
+            
+        # Verify the reset code
+        if not self.db_service.verify_reset_code(email, code):
+            return False, "Mã xác thực không đúng hoặc đã hết hạn"
+            
+        # Reset the password
+        if self.db_service.update_password(email, new_password):
+            return True, "Đặt lại mật khẩu thành công"
+        return False, "Không thể cập nhật mật khẩu" 

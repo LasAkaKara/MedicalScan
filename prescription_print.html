@@ -1,0 +1,73 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Đơn thuốc - Điều trị cảm cúm</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { text-align: center; margin-bottom: 20px; }
+                .info { margin-bottom: 20px; }
+                .medicine { margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; }
+                .medicine-name { font-weight: bold; margin-bottom: 5px; }
+                .medicine-details { margin-left: 20px; }
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Đơn thuốc</h1>
+                <h2>Điều trị cảm cúm</h2>
+            </div>
+            
+            <div class="info">
+                <p><strong>Bệnh viện:</strong> Phòng khám Đa khoa Quốc tế</p>
+                <p><strong>Ngày tạo:</strong> 09/04/2025</p>
+            </div>
+            
+            <div class="medicines">
+                <h3>Danh sách thuốc:</h3>
+        
+                <div class="medicine">
+                    <div class="medicine-name">Paracetamol 500mg</div>
+                    <div class="medicine-details">
+                        <p><strong>Thời gian uống:</strong> sáng, trưa, tối</p>
+                        <p><strong>Liều dùng:</strong> 1 viên/lần</p>
+                        <p><strong>Tổng số lượng:</strong> 15 viên</p>
+                        <p><strong>Thời gian điều trị:</strong> 5 ngày</p>
+                        <p><strong>Hướng dẫn sử dụng:</strong> Uống khi có triệu chứng sốt hoặc đau</p>
+                    </div>
+                </div>
+            
+                <div class="medicine">
+                    <div class="medicine-name">Cetirizine 10mg</div>
+                    <div class="medicine-details">
+                        <p><strong>Thời gian uống:</strong> tối</p>
+                        <p><strong>Liều dùng:</strong> 1 viên/lần</p>
+                        <p><strong>Tổng số lượng:</strong> 5 viên</p>
+                        <p><strong>Thời gian điều trị:</strong> 5 ngày</p>
+                        <p><strong>Hướng dẫn sử dụng:</strong> Uống trước khi đi ngủ</p>
+                    </div>
+                </div>
+            
+                <div class="medicine">
+                    <div class="medicine-name">Ambroxol 30mg</div>
+                    <div class="medicine-details">
+                        <p><strong>Thời gian uống:</strong> sáng, tối</p>
+                        <p><strong>Liều dùng:</strong> 1 viên/lần</p>
+                        <p><strong>Tổng số lượng:</strong> 10 viên</p>
+                        <p><strong>Thời gian điều trị:</strong> 5 ngày</p>
+                        <p><strong>Hướng dẫn sử dụng:</strong> Uống sau khi ăn</p>
+                    </div>
+                </div>
+            
+            </div>
+            <div class="no-print" style="text-align: center; margin-top: 20px;">
+                <button onclick="window.print()">In đơn thuốc</button>
+            </div>
+        </body>
+        </html>
+        

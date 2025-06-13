@@ -66,7 +66,13 @@ class EmailService:
             print(f"Error sending email: {e}")
             return None
 
-    def send_reset_password_email(self, recipient_email, reset_code):
+    def send_reset_password_email(self, recipient_email):
+        """Send a reset password verification code to the user's email"""
+        if not recipient_email:
+            return None
+            
+        reset_code = self.generate_verification_code()
+        
         message = MIMEMultipart()
         message["From"] = self.sender_email
         message["To"] = recipient_email
@@ -101,7 +107,7 @@ class EmailService:
             server.login(self.sender_email, self.password)
             server.send_message(message)
             server.quit()
-            return True
+            return reset_code
         except Exception as e:
-            print(f"Error sending email: {e}")
-            return False 
+            print(f"Error sending reset password email: {e}")
+            return None 
