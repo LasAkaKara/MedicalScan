@@ -17,6 +17,7 @@ from views.screens.python.prescription_detail_screen import PrescriptionDetailSc
 from views.screens.python.calendar_screen import CalendarScreen
 from views.screens.python.add_prescription_screen import AddPrescriptionScreen
 from views.screens.python.notification_screen import NotificationScreen
+from views.screens.python.prescription_confirm_screen import PrescriptionConfirmScreen
 
 class MedicalApp(QApplication):
     def __init__(self, argv):
@@ -44,7 +45,7 @@ class MedicalApp(QApplication):
         self.home_screen = HomeScreen()
         self.verification_screen = VerificationScreen()
         self.reset_password_screen = ResetPasswordScreen()
-        self.scan_screen = ScanScreen()
+        self.scan_screen = ScanScreen(app=self)
         self.prescription_screen = PrescriptionScreen(app=self)
         self.profile_screen = ProfileScreen(app=self)
         self.settings_screen = SettingsScreen(app=self)
@@ -52,6 +53,7 @@ class MedicalApp(QApplication):
         self.calendar_screen = CalendarScreen(app=self)
         self.add_prescription_screen = AddPrescriptionScreen()
         self.notification_screen = NotificationScreen(app=self)
+        self.prescription_confirm_screen = PrescriptionConfirmScreen(self)
 
         # Add screens to stack
         self.stack.addWidget(self.login_screen)
@@ -67,6 +69,7 @@ class MedicalApp(QApplication):
         self.stack.addWidget(self.calendar_screen)
         self.stack.addWidget(self.add_prescription_screen)
         self.stack.addWidget(self.notification_screen)
+        self.stack.addWidget(self.prescription_confirm_screen)
 
 
         # Connect navigation signals
@@ -105,6 +108,12 @@ class MedicalApp(QApplication):
         self.login_screen.go_to_reset_password.connect(self.show_reset_password)
         self.reset_password_screen.go_to_login.connect(self.show_login)
 
+        # Connect scan screen to confirmation screen
+        self.scan_screen.go_to_confirm.connect(self.show_prescription_confirm)
+
+        # Connect confirmation screen navigation
+        self.prescription_confirm_screen.go_back_to_scan.connect(self.show_scan)
+        self.prescription_confirm_screen.go_to_prescription.connect(self.show_prescription)
 
         # Set window title and icon
         self.stack.setWindowTitle("MedicalScan")
@@ -292,6 +301,10 @@ class MedicalApp(QApplication):
                 self.settings_screen.db.mark_missed_notifications()
                 print(f"Daily cleanup completed for {current_date}")
 
+    def show_prescription_confirm(self, prescription_data):
+        """Show prescription confirmation screen with data"""
+        self.prescription_confirm_screen.set_prescription_data(prescription_data)
+        self.stack.setCurrentWidget(self.prescription_confirm_screen)
 
 if __name__ == '__main__':
     app = MedicalApp(sys.argv)

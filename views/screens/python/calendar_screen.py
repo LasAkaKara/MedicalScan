@@ -156,12 +156,16 @@ class CalendarScreen(CalendarScreenUI):
         # Prescription name
         name_label = QLabel(f"{prescription_data['name']}")
         name_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #1f2937; border: none;")
+        name_label.setFixedWidth(260)
+        name_label.setWordWrap(True);
         header_layout.addWidget(name_label)
         
         # Hospital name (if available)
         if prescription_data['hospital']:
             hospital_label = QLabel(f"{prescription_data['hospital']}")
             hospital_label.setStyleSheet("font-size: 13px; color: #6b7280; border: none; margin-left: 4px;")
+            hospital_label.setFixedWidth(200)
+            hospital_label.setWordWrap(True)
             header_layout.addWidget(hospital_label)
         
         layout.addLayout(header_layout)

@@ -1,3 +1,4 @@
+from venv import logger
 import mysql.connector
 from datetime import datetime, timedelta
 import hashlib
@@ -857,12 +858,34 @@ class DatabaseService:
             conn.close()
 
     def add_prescription(self, user_id, name, hospital_name, category_name, medicine_details):
+        """
+        Add a prescription with proper data handling
+        """
         conn = self.connect()
         if not conn:
             return False
         cursor = conn.cursor()
         try:
-            # Get or create category_id
+            # Ensure medicine_details is properly serialized
+            if isinstance(medicine_details, dict):
+                medicine_details_json = json.dumps(medicine_details, ensure_ascii=False)
+            elif isinstance(medicine_details, str):
+                # Validate it's proper JSON
+                try:
+                    json.loads(medicine_details)
+                    medicine_details_json = medicine_details
+                except json.JSONDecodeError:
+                    logger.error(f"Invalid JSON in medicine_details: {medicine_details}")
+                    return False
+            else:
+                logger.error(f"Invalid medicine_details type: {type(medicine_details)}")
+                return False
+            
+            # Debug the data being saved
+            logger.info(f"Saving prescription with medicine_details type: {type(medicine_details)}")
+            logger.debug(f"Medicine details JSON: {medicine_details_json}")
+            
+            # Get or create category
             cursor.execute(
                 "SELECT id FROM categories WHERE name = %s AND user_id = %s",
                 (category_name, user_id)
@@ -884,12 +907,19 @@ class DatabaseService:
                 INSERT INTO prescriptions (created_at, name, user_id, hospital_name, category_id, medicine_details)
                 VALUES (NOW(), %s, %s, %s, %s, %s)
                 """,
-                (name, user_id, hospital_name, category_id, json.dumps(medicine_details, ensure_ascii=False))
+                (name, user_id, hospital_name, category_id, medicine_details_json)
             )
+            
+            prescription_id = cursor.lastrowid
             conn.commit()
+            
+            logger.info(f"Successfully saved prescription with ID: {prescription_id}")
             return True
+        
         except Exception as e:
-            print(f"Error adding prescription: {e}")
+            logger.error(f"Error adding prescription: {e}")
+            import traceback
+            traceback.print_exc()
             conn.rollback()
             return False
         finally:
@@ -1240,3 +1270,98 @@ class DatabaseService:
         finally:
             cursor.close()
             conn.close()
+
+    def add_scanned_prescription(self, user_id, prescription_data, image_path=None):
+        """
+        Add a scanned prescription with AI-analyzed data
+        
+        Args:
+            user_id (int): User ID
+            prescription_data (dict): Analyzed prescription data from AI
+            image_path (str, optional): Path to the scanned image
+        
+        Returns:
+            bool: Success status
+        """
+        conn = self.connect()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        try:
+            # Generate prescription name
+            prescription_name = self._generate_prescription_name(prescription_data)
+            
+            # Get hospital name
+            hospital_name = prescription_data.get("hospital_name", "Không xác định")
+            
+            # Get or create category
+            category_name = "Đơn thuốc quét"
+            cursor.execute(
+                "SELECT id FROM categories WHERE name = %s AND user_id = %s",
+                (category_name, user_id)
+            )
+            category = cursor.fetchone()
+            if category:
+                category_id = category[0] if isinstance(category, tuple) else category['id']
+            else:
+                cursor.execute(
+                    "INSERT INTO categories (user_id, name) VALUES (%s, %s)",
+                    (user_id, category_name)
+                )
+                conn.commit()
+                category_id = cursor.lastrowid
+
+            # Insert prescription
+            cursor.execute(
+                """
+                INSERT INTO prescriptions (created_at, name, user_id, hospital_name, category_id, medicine_details)
+                VALUES (NOW(), %s, %s, %s, %s, %s)
+                """,
+                (prescription_name, user_id, hospital_name, category_id, json.dumps(prescription_data, ensure_ascii=False))
+            )
+            
+            prescription_id = cursor.lastrowid
+            
+            # Optionally save scan record
+            if image_path:
+                cursor.execute(
+                    """
+                    INSERT INTO scans (user_id, image_path, scan_result, created_at)
+                    VALUES (%s, %s, %s, NOW())
+                    """,
+                    (user_id, image_path, json.dumps(prescription_data, ensure_ascii=False))
+                )
+            
+            conn.commit()
+            logger.info(f"Successfully saved scanned prescription with ID: {prescription_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error adding scanned prescription: {e}")
+            conn.rollback()
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+
+    def _generate_prescription_name(self, prescription_data):
+        """Generate a meaningful prescription name from analyzed data"""
+        try:
+            # Try to use diagnosis first
+            diagnosis = prescription_data.get("diagnosis", "").strip()
+            if diagnosis:
+                return f"Đơn thuốc - {diagnosis}"
+            
+            # Try to use first medicine name
+            medicines = prescription_data.get("medicines", [])
+            if medicines and medicines[0].get("medicine_name"):
+                first_medicine = medicines[0]["medicine_name"]
+                return f"Đơn thuốc - {first_medicine}"
+            
+            # Fallback to date-based name
+            current_date = datetime.now().strftime("%d/%m/%Y")
+            return f"Đơn thuốc quét - {current_date}"
+            
+        except Exception as e:
+            logger.error(f"Error generating prescription name: {e}")
+            return f"Đơn thuốc quét - {datetime.now().strftime('%d/%m/%Y')}"
